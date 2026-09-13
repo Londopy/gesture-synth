@@ -14,8 +14,10 @@ process, so both fit free tiers.
 | **GitHub Pages** | 100 GB/month | **no** custom headers | works, but without SharedArrayBuffer: one camera frame more latency, webm-only export |
 
 The build needs Rust with the `wasm32-unknown-unknown` target and Node 20+.
-Cloudflare Pages and Netlify build images already ship Rust; on Render the
-blueprint installs it. Build command:
+Cloudflare Pages and Netlify build images already ship Rust with rustup, so
+`rustup target add wasm32-unknown-unknown` works there. Render's image has a
+read-only Rust, so the blueprint runs `scripts/render-build.sh`, which installs
+a private toolchain in `$HOME` first. Build command elsewhere:
 
 ```bash
 npm ci && node scripts/fetch-models.mjs && npm run build
