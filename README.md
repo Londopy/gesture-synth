@@ -11,13 +11,50 @@
 
 <p align="center">
   <a href="https://github.com/Londopy/gesture-synth/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/Londopy/gesture-synth/actions/workflows/ci.yml/badge.svg"></a>
-  <a href="LICENSE"><img alt="MIT" src="https://img.shields.io/badge/license-MIT-blue.svg"></a>
-  <a href="CHANGELOG.md"><img alt="Changelog" src="https://img.shields.io/badge/changelog-keep%20a%20changelog-orange.svg"></a>
+  <a href="https://github.com/Londopy/gesture-synth/actions/workflows/release.yml"><img alt="Release" src="https://github.com/Londopy/gesture-synth/actions/workflows/release.yml/badge.svg"></a>
+  <a href="CHANGELOG.md"><img alt="changelog" src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/Londopy/gesture-synth/gh-pages/changelog-badge.json"></a>
+  <a href="https://github.com/Londopy/patchnotes"><img alt="validated with patchnotes" src="https://img.shields.io/badge/validated%20with-patchnotes-5b3cc4?logo=python&logoColor=white"></a>
+  <a href="https://keepachangelog.com/en/1.1.0/"><img alt="Keep a Changelog" src="https://img.shields.io/badge/changelog-keep%20a%20changelog-E05735?logo=keepachangelog&logoColor=white"></a>
+  <a href="https://semver.org"><img alt="SemVer" src="https://img.shields.io/badge/versioning-semver-3f8ae5"></a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/Londopy/gesture-synth/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/Londopy/gesture-synth?include_prereleases&sort=semver&display_name=tag&color=8b5cf6"></a>
+  <a href="https://github.com/Londopy/gesture-synth/releases"><img alt="Downloads" src="https://img.shields.io/github/downloads/Londopy/gesture-synth/total?color=22c55e"></a>
+  <a href="https://github.com/Londopy/gesture-synth/commits/main"><img alt="Last commit" src="https://img.shields.io/github/last-commit/Londopy/gesture-synth"></a>
+  <a href="https://github.com/Londopy/gesture-synth/issues"><img alt="Issues" src="https://img.shields.io/github/issues/Londopy/gesture-synth"></a>
+  <a href="https://github.com/Londopy/gesture-synth/pulls"><img alt="Pull requests" src="https://img.shields.io/github/issues-pr/Londopy/gesture-synth"></a>
+  <a href="https://github.com/Londopy/gesture-synth/stargazers"><img alt="Stars" src="https://img.shields.io/github/stars/Londopy/gesture-synth?style=flat&color=f59e0b"></a>
+  <a href="https://github.com/Londopy/gesture-synth"><img alt="Repo size" src="https://img.shields.io/github/repo-size/Londopy/gesture-synth"></a>
+  <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/github/license/Londopy/gesture-synth?color=blue"></a>
+</p>
+
+<p align="center">
   <img alt="Rust" src="https://img.shields.io/badge/Rust-core-b7410e?logo=rust&logoColor=white">
-  <img alt="Svelte" src="https://img.shields.io/badge/Svelte_5-app-ff3e00?logo=svelte&logoColor=white">
+  <img alt="WebAssembly" src="https://img.shields.io/badge/WebAssembly-worklet-654ff0?logo=webassembly&logoColor=white">
+  <img alt="Zig" src="https://img.shields.io/badge/Zig_0.16-SIMD%20DSP-f7a41d?logo=zig&logoColor=white">
+  <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-app-3178c6?logo=typescript&logoColor=white">
+  <img alt="Svelte" src="https://img.shields.io/badge/Svelte_5-runes-ff3e00?logo=svelte&logoColor=white">
+  <img alt="Three.js" src="https://img.shields.io/badge/Three.js-WebGL2-000000?logo=threedotjs&logoColor=white">
+  <img alt="Vite" src="https://img.shields.io/badge/Vite_7-build-646cff?logo=vite&logoColor=white">
   <img alt="Tauri" src="https://img.shields.io/badge/Tauri_2-desktop-24c8db?logo=tauri&logoColor=white">
-  <img alt="Zig" src="https://img.shields.io/badge/Zig-DSP-f7a41d?logo=zig&logoColor=white">
-  <img alt="Gleam" src="https://img.shields.io/badge/Gleam-service-ffaff3?logo=gleam&logoColor=black">
+  <img alt="Gleam" src="https://img.shields.io/badge/Gleam-community%20API-ffaff3?logo=gleam&logoColor=black">
+  <img alt="Erlang/OTP" src="https://img.shields.io/badge/BEAM-OTP%2027-a90533?logo=erlang&logoColor=white">
+  <img alt="MediaPipe" src="https://img.shields.io/badge/MediaPipe-hand%20landmarker-0097a7?logo=google&logoColor=white">
+  <img alt="PostgreSQL" src="https://img.shields.io/badge/PostgreSQL-optional-4169e1?logo=postgresql&logoColor=white">
+  <img alt="Docker" src="https://img.shields.io/badge/Docker-service%20image-2496ed?logo=docker&logoColor=white">
+</p>
+
+<p align="center">
+  <img alt="Windows" src="https://img.shields.io/badge/Windows-.msi-0078d4?logo=windows&logoColor=white">
+  <img alt="Linux" src="https://img.shields.io/badge/Linux-.AppImage%20%2F%20.deb-fcc624?logo=linux&logoColor=black">
+  <img alt="macOS" src="https://img.shields.io/badge/macOS-opt--in%20build-000000?logo=apple&logoColor=white">
+  <img alt="Web" src="https://img.shields.io/badge/Web-PWA%20%C2%B7%20offline-5a0fc8?logo=pwa&logoColor=white">
+  <img alt="Deploy to Render" src="https://img.shields.io/badge/Render-blueprint-46e3b7?logo=render&logoColor=black">
+  <img alt="Web MIDI" src="https://img.shields.io/badge/MIDI-out-2b2b2b?logo=midi&logoColor=white">
+  <img alt="Camera" src="https://img.shields.io/badge/camera-runs%20locally%2C%20nothing%20uploaded-16a34a">
+  <img alt="Code of Conduct" src="https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg">
+  <img alt="PRs welcome" src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg">
 </p>
 
 ---
@@ -133,7 +170,8 @@ Every [release](https://github.com/Londopy/gesture-synth/releases) has Windows
 website you can run on your own computer with one command (`node serve.mjs`,
 then open http://localhost:4173), `SHA256SUMS.txt` to verify downloads, and an
 install tutorial in the release notes. The notes are generated from
-[CHANGELOG.md](CHANGELOG.md) by [patchnotes](https://pypi.org/project/patchnotes/).
+[CHANGELOG.md](CHANGELOG.md) by [patchnotes](https://pypi.org/project/patchnotes/),
+which also validates the changelog in CI and publishes the changelog badge above.
 `npm run serve` runs the same local server against your own build.
 
 ## Hosting the web build
