@@ -32,6 +32,8 @@ fn main() {
         .arg(&src)
         .arg("-OReleaseFast")
         .arg("-fno-stack-check")
+        // Rust links tests and cdylibs as position-independent code on Linux/macOS
+        .arg("-fPIC")
         .arg("--name")
         .arg("gsynkernel")
         .arg("-target")

@@ -18,6 +18,9 @@ Versions follow [Semantic Versioning](https://semver.org/).
 - Headless screenshot script (`scripts/shots.mjs`) and cheat-sheet renderer (`scripts/render-cheatsheet.mjs`) that drive the camera-less dev hook; `window.__gsyn.tick()` steps one scene frame.
 - README: hero and feature screenshots, generated gesture cheat sheet, mermaid architecture diagram, collapsible reference sections, badge wall with the patchnotes changelog badge.
 
+### Fixed
+- CI: the Zig kernel is built with -fPIC (Rust links tests as position-independent code on Linux), the community job installs rebar3, and the desktop check fetches the ffmpeg sidecar that Tauri requires at build time.
+
 ### Changed
 - The camera feed setting became the view mode setting; a saved "camera feed on" preference migrates to the practice view.
 - Background field uses a sin-free noise hash (the old one produced blocky squares on some GPUs) and the Neon theme background sits in the blue/violet range instead of olive for sharp keys.

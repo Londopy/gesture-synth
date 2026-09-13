@@ -49,11 +49,11 @@ Requires Zig 0.16.0.
 
 ```sh
 # Windows MSVC  -> zig-out/gsynkernel.lib
-zig build-lib src/kernel.zig -OReleaseFast -fno-stack-check --name gsynkernel \
+zig build-lib src/kernel.zig -OReleaseFast -fno-stack-check -fPIC --name gsynkernel \
     -target x86_64-windows-msvc -femit-bin=zig-out/gsynkernel.lib
 
 # wasm32        -> zig-out/libgsynkernel.a
-zig build-lib src/kernel.zig -OReleaseFast -fno-stack-check --name gsynkernel \
+zig build-lib src/kernel.zig -OReleaseFast -fno-stack-check -fPIC --name gsynkernel \
     -target wasm32-freestanding -femit-bin=zig-out/libgsynkernel.a
 ```
 
