@@ -1,0 +1,19 @@
+[package]
+name = "gsyn-core"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Gesture Synth core: gesture parser, musical state, synth, transport, loop engine, session formats"
+
+[features]
+default = []
+# Link the Zig SIMD kernel (crates/gsyn-zig) instead of the pure-Rust reference kernel.
+zig = []
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["float_roundtrip"] }
+libm = "0.2"
+
+[dev-dependencies]
+approx = "0.5"

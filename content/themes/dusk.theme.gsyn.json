@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "name": "Dusk",
+  "palette": {
+    "bgHueShift": 40,
+    "bgSaturation": 0.6,
+    "bgLightness": 0.07,
+    "major": "#ffc98a",
+    "minor": "#8f7bff",
+    "ring": "#d7b8ff",
+    "particle": "#fff2d9",
+    "ghost": "#ffb070,#a58bff,#ff7bb0,#7fe0ff"
+  },
+  "particle_density": 0.8,
+  "bloom": true,
+  "haze_strength": 1.1,
+  "ghost_opacity": 0.35,
+  "background_style": "aurora"
+}

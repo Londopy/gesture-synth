@@ -1,0 +1,52 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Gesture Synth",
+  "version": "0.1.0",
+  "identifier": "dev.londopy.gesturesynth",
+  "build": {
+    "frontendDist": "../app/dist",
+    "devUrl": "http://localhost:5173",
+    "beforeDevCommand": "npm run wasm && npm --workspace app run dev",
+    "beforeBuildCommand": "npm run wasm && npm --workspace app run build"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Gesture Synth",
+        "width": 1440,
+        "height": 900,
+        "minWidth": 960,
+        "minHeight": 600,
+        "resizable": true,
+        "decorations": true,
+        "backgroundColor": "#0b0d12"
+      }
+    ],
+    "security": {
+      "csp": null,
+      "headers": {
+        "Cross-Origin-Opener-Policy": "same-origin",
+        "Cross-Origin-Embedder-Policy": "require-corp"
+      }
+    }
+  },
+  "plugins": {
+    "deep-link": {
+      "desktop": {
+        "schemes": ["gsyn"]
+      }
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.icns", "icons/icon.ico"],
+    "externalBin": ["binaries/ffmpeg"],
+    "category": "Music",
+    "shortDescription": "Play chords with your hands in front of a camera.",
+    "longDescription": "A camera-played chord instrument with a loop pedal, harmony-aware visuals and MIDI out.",
+    "windows": {
+      "webviewInstallMode": { "type": "downloadBootstrapper" }
+    }
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "name": "Gesture Synth",
+  "short_name": "GestureSynth",
+  "description": "Play chords with your hands in front of a camera. Loop pedal, harmony-aware visuals, MIDI out.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#0b0d12",
+  "theme_color": "#0b0d12",
+  "icons": [
+    { "src": "/icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ],
+  "protocol_handlers": [
+    { "protocol": "web+gsyn", "url": "/open?u=%s" }
+  ],
+  "categories": ["music", "entertainment"]
+}

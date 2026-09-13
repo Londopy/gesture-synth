@@ -1,0 +1,24 @@
+[package]
+name = "gsyn-wasm"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "wasm-bindgen bindings for gsyn-core: parser (main thread) + engine (AudioWorklet)"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[features]
+default = []
+zig = ["gsyn-core/zig"]
+
+[dependencies]
+gsyn-core = { path = "../gsyn-core" }
+wasm-bindgen = "0.2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+serde-wasm-bindgen = "0.6"
+js-sys = "0.3"
+
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = ["-O3", "--enable-simd"]

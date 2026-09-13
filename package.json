@@ -1,0 +1,25 @@
+{
+  "name": "gesture-synth",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Gesture Synth - a camera-played chord instrument with a loop pedal and harmony-aware visuals",
+  "workspaces": ["app"],
+  "scripts": {
+    "wasm": "wasm-pack build crates/gsyn-wasm --target web --out-dir ../../app/src/lib/wasm/pkg --out-name gsyn --release",
+    "wasm:dev": "wasm-pack build crates/gsyn-wasm --target web --out-dir ../../app/src/lib/wasm/pkg --out-name gsyn --dev",
+    "models": "node scripts/fetch-models.mjs",
+    "dev": "npm run wasm && npm --workspace app run dev",
+    "build": "npm run wasm && npm --workspace app run build",
+    "preview": "npm --workspace app run preview",
+    "tauri": "tauri",
+    "tauri:dev": "npm run wasm && tauri dev",
+    "tauri:build": "npm run wasm && tauri build",
+    "test:core": "cargo test -p gsyn-core",
+    "test:app": "npm --workspace app run test",
+    "test": "npm run test:core && npm run test:app"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2",
+    "wasm-pack": "^0.13.1"
+  }
+}

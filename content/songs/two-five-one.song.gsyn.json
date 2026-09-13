@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "name": "Two Five One",
+  "author": "Gesture Synth",
+  "bpm": 110,
+  "time_sig": "4/4",
+  "key": "F",
+  "mode": "major",
+  "bars": 4,
+  "chords": [
+    { "bar": 1, "beat": 1, "degree": 2, "quality": "minor", "shape": "seventh", "octave": 0, "dur_beats": 4 },
+    { "bar": 2, "beat": 1, "degree": 5, "quality": "major", "shape": "dom_or_dim7", "octave": 0, "dur_beats": 4 },
+    { "bar": 3, "beat": 1, "degree": 1, "quality": "major", "shape": "seventh", "octave": 0, "dur_beats": 4 },
+    { "bar": 4, "beat": 1, "degree": 1, "quality": "major", "shape": "inv1", "octave": 0, "dur_beats": 4 }
+  ],
+  "hints": { "left_scheme": { "kind": "full" }, "right_scheme": { "kind": "full" } },
+  "tags": ["jazz", "intermediate"],
+  "instrument": "Keys"
+}

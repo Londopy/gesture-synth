@@ -1,0 +1,14 @@
+node_modules/
+target/
+dist/
+app/dist/
+app/src/lib/wasm/pkg/
+app/public/mediapipe/
+app/public/models/*.task
+src-tauri/binaries/ffmpeg-*
+src-tauri/gen/
+services/community/build/
+services/community/erl_crash.dump
+*.log
+.DS_Store
+/crates/gsyn-zig/.zig-cache/

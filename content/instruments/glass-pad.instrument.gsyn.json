@@ -1,0 +1,12 @@
+{
+  "name": "Glass Pad",
+  "osc": [
+    { "wave": "triangle", "detune": -6.0, "level": 0.5, "octave": 0 },
+    { "wave": "sine", "detune": 6.0, "level": 0.4, "octave": 1 }
+  ],
+  "env": { "a": 0.6, "d": 0.6, "s": 0.9, "r": 1.8 },
+  "filter": { "type": "lowpass", "res": 0.15, "cutoff_range": [300.0, 6000.0] },
+  "fx": { "reverb": 0.6, "delay": 0.2 },
+  "gain": 0.8,
+  "glide": 0.0
+}

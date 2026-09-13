@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "name": "Four Chords",
+  "author": "Gesture Synth",
+  "bpm": 84,
+  "time_sig": "4/4",
+  "key": "C",
+  "mode": "major",
+  "bars": 4,
+  "chords": [
+    { "bar": 1, "beat": 1, "degree": 1, "quality": "major", "shape": "root", "octave": 0, "dur_beats": 4 },
+    { "bar": 2, "beat": 1, "degree": 5, "quality": "major", "shape": "root", "octave": 0, "dur_beats": 4 },
+    { "bar": 3, "beat": 1, "degree": 6, "quality": "minor", "shape": "root", "octave": 0, "dur_beats": 4 },
+    { "bar": 4, "beat": 1, "degree": 4, "quality": "major", "shape": "root", "octave": 0, "dur_beats": 4 }
+  ],
+  "hints": { "left_scheme": { "kind": "full" }, "right_scheme": { "kind": "fixed_style", "shape": "root" } },
+  "tags": ["beginner"],
+  "instrument": "Pad"
+}
