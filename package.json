@@ -1,7 +1,7 @@
 {
   "name": "gesture-synth",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Gesture Synth - a camera-played chord instrument with a loop pedal and harmony-aware visuals",
   "workspaces": ["app"],
   "scripts": {

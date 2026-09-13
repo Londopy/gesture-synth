@@ -1,13 +1,13 @@
 # Changelog
 
-All notable changes to Gesture Synth are documented here. The format follows
-[Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and is machine-readable
-with [patchnotes](https://pypi.org/project/patchnotes/) (`patchnotes CHANGELOG.md validate`).
-Versions follow [Semantic Versioning](https://semver.org/).
+All notable changes to Gesture Synth are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and is machine-readable with [patchnotes](https://pypi.org/project/patchnotes/) (`patchnotes CHANGELOG.md validate`). Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-09-13
+
 ### Added
+
 - Clear camera view: the plain, untinted camera picture with every effect off, with an optional hand wireframe overlay. Three view modes now cycle with `C` (performance, practice, clear camera) and are selectable in the top-right menu, Visuals and Settings.
 - Video recorder (`Ctrl/Cmd+Shift+R` or the camera button): records the scene or the raw camera feed with the instrument mix (metronome excluded) and an optional microphone (device picker, gain, level meter) for singing or talking over a loop. Start/stop with a timer, preview, save as webm or mp4.
 - Release pipeline: pushing a `v*` tag builds Windows (.msi, setup .exe) and Linux (.AppImage, .deb) installers, a zip of the website with a zero-dependency local server (`node serve.mjs` on http://localhost:4173), `SHA256SUMS.txt`, and release notes generated from this changelog with patchnotes plus an install tutorial.
@@ -19,9 +19,11 @@ Versions follow [Semantic Versioning](https://semver.org/).
 - README: hero and feature screenshots, generated gesture cheat sheet, mermaid architecture diagram, collapsible reference sections, badge wall with the patchnotes changelog badge.
 
 ### Fixed
+
 - CI: the Zig kernel is built with -fPIC (Rust links tests as position-independent code on Linux), the community job installs rebar3, and the desktop check fetches the ffmpeg sidecar that Tauri requires at build time.
 
 ### Changed
+
 - The camera feed setting became the view mode setting; a saved "camera feed on" preference migrates to the practice view.
 - Background field uses a sin-free noise hash (the old one produced blocky squares on some GPUs) and the Neon theme background sits in the blue/violet range instead of olive for sharp keys.
 - CI and the release workflow no longer use hosted macOS runners (they hung without finishing); every job now has a timeout. macOS is an opt-in workflow (Apple Silicon runner, arm64 only, no Homebrew, 45 min timeout) that attaches a `.dmg` to an existing release; see DEPLOY.md.
@@ -29,10 +31,8 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [0.1.0] - 2026-09-12
 
-First working build of the whole spec: one Rust core, one TypeScript frontend,
-one Zig kernel, one Gleam service, shipped as a Tauri desktop app and a web app.
-
 ### Added
+
 - Gesture parser (`crates/gsyn-core`): landmark normalization, per-finger extension test, thumb in/out hysteresis, palm tilt with dead zone, height-to-volume with perceptual curve, 90 ms debounce, confidence hold and fade, chord-degree table for the left hand, shape table for the right hand, flick bass hit, pinch arpeggiator toggle, two-fist circle-of-fifths key change, 2 s latch, Full / Scale-only / Fixed-degree and Full / Fixed-style / Dynamics-only schemes, Theremin mode with velocity prediction and optional snap-to-scale.
 - Musical state model with flat float encoding for SharedArrayBuffer and IPC transport, chord derivation (inversion, sevenths, dom7 / m7b5 / dim7 setting, open voicing, octave), roman-numeral and absolute chord names.
 - Synth engine: two-oscillator voices, ADSR, trapezoidal state-variable low-pass filter, chord legato (common tones held), arpeggiator, theremin glide voice with vibrato, seven instrument presets, master soft clipper, FDN reverb, stereo delay, limiter, metronome on a separate cue bus.
@@ -55,11 +55,14 @@ one Zig kernel, one Gleam service, shipped as a Tauri desktop app and a web app.
 - Camera-less test hook `window.__gsyn.synth(...)` that feeds synthetic hands through the whole pipeline.
 
 ### Changed
+
 - Camera failure at startup is not fatal: the app continues with keyboard, loops and every page, and offers a retry in Settings. The spec's first-run flow assumed the camera always starts.
 
 ### Fixed
+
 - The AudioWorklet receives raw `.wasm` bytes and compiles them itself. Chromium silently drops a `postMessage` to an AudioWorklet port when the payload contains a `WebAssembly.Module`.
 - The synthetic hand generator used by tutorials and tests produces a relaxed thumb inside the octave-neutral band instead of reading as "thumb in".
 
-[Unreleased]: https://github.com/Londopy/gesture-synth/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/Londopy/gesture-synth/compare/v0.2.0...HEAD
 [0.1.0]: https://github.com/Londopy/gesture-synth/releases/tag/v0.1.0
+[0.2.0]: https://github.com/Londopy/gesture-synth/compare/v0.1.0...v0.2.0

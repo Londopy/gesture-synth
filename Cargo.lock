@@ -1453,7 +1453,7 @@ dependencies = [
 
 [[package]]
 name = "gesture-synth"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "cpal",
  "dirs",
@@ -1604,7 +1604,7 @@ dependencies = [
 
 [[package]]
 name = "gsyn-core"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "approx",
  "libm",
@@ -1614,7 +1614,7 @@ dependencies = [
 
 [[package]]
 name = "gsyn-wasm"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "gsyn-core",
  "js-sys",
