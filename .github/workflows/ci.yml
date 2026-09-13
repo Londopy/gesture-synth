@@ -122,8 +122,25 @@ jobs:
       contents: write # publishes changelog-badge.json to the gh-pages branch
     steps:
       - uses: actions/checkout@v4
-      - name: Validate with patchnotes (strict) and publish the badge
+      - name: Validate with patchnotes (strict)
         uses: Londopy/patchnotes@v2
         with:
           strict: "true"
-          badge: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && 'gh-pages' || '' }}
+      # The README's changelog badge is a shields.io endpoint badge that reads
+      # changelog-badge.json from the gh-pages branch. That branch only ever
+      # holds this one file, so it is rebuilt from scratch and force-pushed.
+      - name: Publish the changelog badge to gh-pages
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          patchnotes CHANGELOG.md badge > /tmp/changelog-badge.json
+          cat /tmp/changelog-badge.json
+          mkdir /tmp/pages && cd /tmp/pages
+          git init -q -b gh-pages
+          git config user.name "Londopy"
+          git config user.email "109172537+Londopy@users.noreply.github.com"
+          cp /tmp/changelog-badge.json .
+          git add changelog-badge.json
+          git commit -qm "changelog badge"
+          git push -q --force "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" gh-pages
