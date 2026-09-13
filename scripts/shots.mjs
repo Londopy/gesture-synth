@@ -29,6 +29,7 @@ const browser = await puppeteer.launch({
 });
 const page = await browser.newPage();
 page.on('pageerror', (e) => console.error('[page]', e.message));
+page.on('dialog', (d) => d.accept()); // the app asks before leaving with an unsaved loop
 await page.goto(URL, { waitUntil: 'networkidle0' });
 await page.evaluate(() => localStorage.setItem('gsyn.settings.v1', JSON.stringify({ firstRunDone: true, tourDone: true, theme: 'Neon' })));
 await page.reload({ waitUntil: 'networkidle0' });
@@ -153,7 +154,7 @@ await shot('recorder');
 
 // 6) medals: play the seven degrees and the four shapes, catch the unlock toast, then the page
 await key('Escape');
-await page.evaluate(() => { localStorage.removeItem('gsyn.achievements.v1'); });
+await page.evaluate(() => { window.__gsyn.rt.stop(); window.__gsyn.rt.dirty = false; localStorage.removeItem('gsyn.achievements.v1'); });
 await page.reload({ waitUntil: 'load' });
 await page.waitForFunction(() => !!window.__gsyn);
 await page.evaluate(async () => { const rt = window.__gsyn.rt; await rt.start(); await new Promise((r) => setTimeout(r, 500)); });
