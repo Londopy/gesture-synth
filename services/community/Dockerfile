@@ -13,4 +13,6 @@ WORKDIR /app
 COPY --from=build /app/build/erlang-shipment ./
 ENV PORT=8787
 EXPOSE 8787
-CMD ["./entrypoint.sh", "run"]
+# Gleam 1.18 emits license comments above the shebang in entrypoint.sh, so the
+# kernel cannot exec it directly ("exec format error"); run it through sh.
+CMD ["sh", "./entrypoint.sh", "run"]
