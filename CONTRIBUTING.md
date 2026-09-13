@@ -95,11 +95,12 @@ git commit -am "Release 0.2.0"
 git tag v0.2.0 && git push && git push --tags
 ```
 
-The tag triggers `.github/workflows/release.yml`: Windows and Linux installers,
+The tag triggers `.github/workflows/release.yml`: Windows, Linux and macOS (Apple Silicon) installers,
 the web zip with `serve.mjs`, `SHA256SUMS.txt`, and notes rendered from the
 changelog with `scripts/release-notes.mjs` (preview them locally with
-`npm run release:notes -- v0.2.0 owner/repo`). macOS is not built in CI;
-see [DEPLOY.md](DEPLOY.md) for the opt-in macOS workflow and the local build. Every workflow job has a
+`npm run release:notes -- v0.2.0 owner/repo`). The macOS entry is optional
+(`continue-on-error`, 45 min timeout); Intel builds use the opt-in workflow in
+[DEPLOY.md](DEPLOY.md). Every workflow job has a
 `timeout-minutes`; keep it that way when adding jobs.
 
 ## License

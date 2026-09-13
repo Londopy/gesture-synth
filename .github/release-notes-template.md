@@ -10,7 +10,7 @@
 | --- | --- |
 | `Gesture.Synth_*_x64-setup.exe` / `Gesture.Synth_*_x64_en-US.msi` | Windows installer (WebView2, 64-bit) |
 | `Gesture.Synth_*_amd64.AppImage` / `.deb` / `.rpm` | Linux |
-| `Gesture.Synth_*_aarch64.dmg` | macOS, Apple Silicon (only present when the opt-in Mac build has been run) |
+| `Gesture.Synth_*_aarch64.dmg` | macOS, Apple Silicon |
 | `gesture-synth-web-{{TAG}}.zip` | The website, to run on your own computer at `http://localhost:4173` |
 | `SHA256SUMS.txt` | Checksums for every file above |
 
@@ -24,16 +24,14 @@
 
 ### macOS
 
-There is no prebuilt Mac app (hosted macOS build machines were unreliable). Two options:
+Apple Silicon (M1 or later): download the `_aarch64.dmg`, open it, drag **Gesture Synth** to Applications. The first launch needs a right-click › **Open** because the app is not notarized, or run `xattr -cr "/Applications/Gesture Synth.app"`. Grant camera access when asked.
 
-- Use the website zip below; it runs the same instrument in Safari, Chrome or Firefox.
-- If a `_aarch64.dmg` is attached to this release, use it (Apple Silicon only): open it, drag **Gesture Synth** to Applications, then right-click › **Open** the first time (the app is not notarized) or run `xattr -cr "/Applications/Gesture Synth.app"`.
-- Otherwise build the app yourself in about ten minutes: install [Rust](https://rustup.rs), [Node](https://nodejs.org) and Xcode command line tools (`xcode-select --install`), then
-  ```bash
-  git clone https://github.com/{{REPO}}.git && cd gesture-synth
-  npm install && npm run models && npm run tauri:build
-  ```
-  The `.app` and `.dmg` land in `target/release/bundle/`. Grant camera access on first launch.
+Intel Mac: there is no prebuilt app unless an `_x86_64.dmg` is attached. Use the website zip below (same instrument in Safari, Chrome or Firefox), or build it yourself in about ten minutes: install [Rust](https://rustup.rs), [Node](https://nodejs.org) and Xcode command line tools (`xcode-select --install`), then
+```bash
+git clone https://github.com/{{REPO}}.git && cd gesture-synth
+npm install && npm run models && npm run tauri:build
+```
+The `.app` and `.dmg` land in `target/release/bundle/`.
 
 ### Linux
 

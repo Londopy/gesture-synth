@@ -48,7 +48,7 @@
 <p align="center">
   <img alt="Windows" src="https://img.shields.io/badge/Windows-.msi-0078d4?logo=windows&logoColor=white">
   <img alt="Linux" src="https://img.shields.io/badge/Linux-.AppImage%20%2F%20.deb-fcc624?logo=linux&logoColor=black">
-  <img alt="macOS" src="https://img.shields.io/badge/macOS-opt--in%20build-000000?logo=apple&logoColor=white">
+  <img alt="macOS" src="https://img.shields.io/badge/macOS-.dmg%20(Apple%20Silicon)-000000?logo=apple&logoColor=white">
   <img alt="Web" src="https://img.shields.io/badge/Web-PWA%20%C2%B7%20offline-5a0fc8?logo=pwa&logoColor=white">
   <img alt="Deploy to Render" src="https://img.shields.io/badge/Render-blueprint-46e3b7?logo=render&logoColor=black">
   <img alt="Web MIDI" src="https://img.shields.io/badge/MIDI-out-2b2b2b?logo=midi&logoColor=white">
@@ -239,8 +239,8 @@ osu!-style with a chime. Everything is tracked on your device only.
 ## Download instead of building
 
 Every [release](https://github.com/Londopy/gesture-synth/releases) has Windows
-(.msi) and Linux (.AppImage, .deb) installers (macOS: opt-in build or from
-source, see [DEPLOY.md](DEPLOY.md)), a zip of the website you can run on your
+(.msi), Linux (.AppImage, .deb, .rpm) and macOS Apple Silicon (.dmg)
+installers (Intel Mac: opt-in build or from source, see [DEPLOY.md](DEPLOY.md)), a zip of the website you can run on your
 own computer with one command (`node serve.mjs`, then open
 http://localhost:4173), `SHA256SUMS.txt` to verify downloads, and an install
 tutorial in the release notes. The notes are generated from

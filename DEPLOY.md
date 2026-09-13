@@ -48,19 +48,19 @@ redirect), `CORS_ORIGIN` (set it to the app origin, not `*`, in production),
 ## Desktop installers
 
 Pushing a tag `vX.Y.Z` runs `.github/workflows/release.yml`, which builds
-Windows (`.msi`, setup `.exe`) and Linux (`.deb`, `.AppImage`) bundles with
-Tauri, a zip of the web build with a local server, `SHA256SUMS.txt`, and
+Windows (`.msi`, setup `.exe`), Linux (`.deb`, `.AppImage`, `.rpm`) and macOS
+Apple Silicon (`.dmg`) bundles with Tauri, a zip of the web build with a local server, `SHA256SUMS.txt`, and
 release notes rendered from `CHANGELOG.md`, then publishes the GitHub Release.
 GitHub Actions is free for public repositories. Every job has a
 `timeout-minutes` so a stuck runner cannot burn the monthly quota.
 
-macOS is not part of the automatic release: hosted macOS runners have hung
-without finishing for this project. There is an opt-in workflow instead,
-**Actions › macOS build (opt-in) › Run workflow**: enter the release tag, tick
-"intel" if you also want an x86_64 build. It uses an Apple Silicon runner,
-builds arm64 only (no universal lipo), pulls ffmpeg from `ffmpeg-static`
-instead of Homebrew, has a 45-minute timeout, and attaches the `.dmg` plus
-its checksum to the release. If it still hangs, build on a Mac:
+The macOS entry in that matrix is the one hosted macOS runners have hung on in
+the past, so it is fenced off: Apple Silicon runner, arm64 only (no universal
+lipo), ffmpeg from `ffmpeg-static` instead of Homebrew, a 45-minute timeout,
+and `continue-on-error` so a stuck Mac build cannot block the Windows and
+Linux release. For an Intel `.dmg`, or to redo the Mac build after a timeout,
+use **Actions › macOS build (opt-in) › Run workflow**: enter the release tag
+and tick "intel" if you want x86_64. If that also hangs, build on a Mac:
 
 ```bash
 xcode-select --install

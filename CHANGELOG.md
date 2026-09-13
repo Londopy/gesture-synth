@@ -6,7 +6,12 @@ All notable changes to Gesture Synth are documented here. The format follows [Ke
 
 ### Added
 
+- Release workflow: builds the macOS Apple Silicon `.dmg` alongside Windows and Linux (arm64 only, no Homebrew, 45 min timeout, `continue-on-error` so a hung Mac runner cannot block the release). The opt-in macOS workflow remains for Intel builds and re-runs.
 - Community service: applies `sql/schema.sql` on startup (idempotent), waits for the database pool before serving, and accepts hosted Postgres connection strings as pasted from Neon, Supabase or Render (adds the default port and `sslmode=require` when missing). No manual schema step is needed any more.
+
+### Changed
+
+- Releases are no longer flagged as pre-releases for `v0.x` tags.
 
 ### Fixed
 

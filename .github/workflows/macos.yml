@@ -1,9 +1,9 @@
 name: macOS build (opt-in)
 
-# Not part of the release workflow: hosted macOS runners have hung for this
-# project in the past. Run this by hand (Actions > macOS build > Run workflow)
-# for an existing release tag. It is set up to avoid the known slow paths:
-# Apple Silicon runner, arm64 only (no universal lipo), no Homebrew, hard timeout.
+# The release workflow already builds the Apple Silicon .dmg. Use this by hand
+# (Actions > macOS build > Run workflow) to add an Intel build to an existing
+# release, or to redo the Mac build if the release-time one timed out. It avoids
+# the known slow paths: arm64 by default (no universal lipo), no Homebrew, hard timeout.
 
 on:
   workflow_dispatch:

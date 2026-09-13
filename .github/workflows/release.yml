@@ -1,8 +1,10 @@
 name: Release
 
 # Push a tag like v0.2.0 (after `patchnotes CHANGELOG.md bump 0.2.0`):
-#   1. desktop: Tauri bundles for Windows (.msi + setup.exe) and Linux (.AppImage + .deb).
-#      macOS is built locally (see DEPLOY.md): hosted macOS runners have hung indefinitely for this project.
+#   1. desktop: Tauri bundles for Windows (.msi + setup.exe), Linux (.AppImage + .deb + .rpm)
+#      and macOS Apple Silicon (.dmg). The macOS entry is arm64 only, uses no Homebrew, has a
+#      45 minute timeout and continue-on-error, so a hung Mac runner (seen before) can't hold
+#      the release hostage. Intel Macs: the opt-in macos.yml workflow.
 #   2. web: zip of the built site with serve.mjs for running on localhost
 #   3. finalize: SHA256SUMS.txt, release notes from CHANGELOG.md (patchnotes) + install tutorial, publish
 
@@ -26,16 +28,26 @@ jobs:
           - name: windows
             os: windows-latest
             args: ""
+            timeout: 60
+            optional: false
           - name: linux
             os: ubuntu-22.04
             args: ""
+            timeout: 60
+            optional: false
+          - name: macos-arm64
+            os: macos-15
+            args: --target aarch64-apple-darwin
+            timeout: 45
+            optional: true
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 60
+    timeout-minutes: ${{ matrix.timeout }}
+    continue-on-error: ${{ matrix.optional }}
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
         with:
-          targets: wasm32-unknown-unknown
+          targets: wasm32-unknown-unknown,aarch64-apple-darwin
       - uses: Swatinem/rust-cache@v2
       - uses: actions/setup-node@v4
         with:
@@ -62,7 +74,7 @@ jobs:
           releaseName: Gesture Synth ${{ github.ref_name }}
           releaseBody: Building release assets…
           releaseDraft: true
-          prerelease: ${{ startsWith(github.ref_name, 'v0.') }}
+          prerelease: false
           args: ${{ matrix.args }}
 
   web:
