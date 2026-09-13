@@ -46,8 +46,10 @@ jobs:
       - name: Collect
         run: |
           mkdir -p out
-          cp src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg out/
-          cd out && for f in *.dmg; do mv "$f" "${f%.dmg}_aarch64.dmg"; done
+          # src-tauri is a workspace member, so cargo writes to the root target/ dir.
+          # Tauri already names the file "Gesture Synth_<ver>_aarch64.dmg"; drop the space.
+          cp target/aarch64-apple-darwin/release/bundle/dmg/*.dmg out/
+          cd out && for f in *.dmg; do mv "$f" "${f// /.}"; done
           shasum -a 256 *.dmg > SHA256SUMS-macos-arm64.txt
           cat SHA256SUMS-macos-arm64.txt
       - uses: actions/upload-artifact@v4
@@ -84,8 +86,8 @@ jobs:
       - name: Collect
         run: |
           mkdir -p out
-          cp src-tauri/target/x86_64-apple-darwin/release/bundle/dmg/*.dmg out/
-          cd out && for f in *.dmg; do mv "$f" "${f%.dmg}_x86_64.dmg"; done
+          cp target/x86_64-apple-darwin/release/bundle/dmg/*.dmg out/
+          cd out && for f in *.dmg; do mv "$f" "${f// /.}"; done
           shasum -a 256 *.dmg > SHA256SUMS-macos-x86_64.txt
       - uses: actions/upload-artifact@v4
         with:

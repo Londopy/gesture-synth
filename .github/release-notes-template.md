@@ -9,7 +9,8 @@
 | File | What it is |
 | --- | --- |
 | `Gesture.Synth_*_x64-setup.exe` / `Gesture.Synth_*_x64_en-US.msi` | Windows installer (WebView2, 64-bit) |
-| `Gesture.Synth_*_amd64.AppImage` / `.deb` | Linux |
+| `Gesture.Synth_*_amd64.AppImage` / `.deb` / `.rpm` | Linux |
+| `Gesture.Synth_*_aarch64.dmg` | macOS, Apple Silicon (only present when the opt-in Mac build has been run) |
 | `gesture-synth-web-{{TAG}}.zip` | The website, to run on your own computer at `http://localhost:4173` |
 | `SHA256SUMS.txt` | Checksums for every file above |
 
@@ -32,7 +33,7 @@ There is no prebuilt Mac app (hosted macOS build machines were unreliable). Two 
   git clone https://github.com/{{REPO}}.git && cd gesture-synth
   npm install && npm run models && npm run tauri:build
   ```
-  The `.app` and `.dmg` land in `src-tauri/target/release/bundle/`. Grant camera access on first launch.
+  The `.app` and `.dmg` land in `target/release/bundle/`. Grant camera access on first launch.
 
 ### Linux
 

@@ -62,6 +62,6 @@ its checksum to the release. If it still hangs, build on a Mac:
 
 ```bash
 xcode-select --install
-npm install && npm run models && npm run tauri:build      # src-tauri/target/release/bundle/dmg/
-shasum -a 256 src-tauri/target/release/bundle/dmg/*.dmg   # append to SHA256SUMS.txt
+npm install && npm run models && npm run tauri:build      # target/release/bundle/dmg/
+shasum -a 256 target/release/bundle/dmg/*.dmg   # append to SHA256SUMS.txt
 ```
