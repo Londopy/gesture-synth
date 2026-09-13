@@ -9,6 +9,7 @@
   import { ROMAN } from '../music';
   import { rt } from '../state/engine.svelte';
   import { EGG_IDS, EGG_INFO } from '../eggs/detect';
+  import MadeBy from './MadeBy.svelte';
 
   let tab = $state<'gestures' | 'shortcuts' | 'trouble' | 'secrets'>('gestures');
   const found = $derived(settings.s.eggsFound);
@@ -25,6 +26,7 @@
         <button class:active={tab === 'secrets'} onclick={() => (tab = 'secrets')}>Secrets {found.length ? `${found.length}/${EGG_IDS.length}` : ''}</button>
       </div>
       <div class="row">
+        <MadeBy />
         <button onclick={() => ui.startTour()}>Re-run tour</button>
         <button class="ghost" onclick={() => (ui.help = false)} aria-label="Close">×</button>
       </div>

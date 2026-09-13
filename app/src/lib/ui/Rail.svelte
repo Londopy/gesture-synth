@@ -3,6 +3,7 @@
   // Community, Settings. Collapsible: icons only, labels on hover/expand.
   import { router, PAGES } from '../router/router.svelte';
   import { ui } from '../state/ui.svelte';
+  import MadeBy from './MadeBy.svelte';
 
   const icons: Record<string, string> = {
     play: 'M5 3v10l8-5z',
@@ -34,6 +35,9 @@
       <span class="lbl">{p.label}</span>
     </a>
   {/each}
+  <div class="foot">
+    <MadeBy compact={!ui.railOpen} />
+  </div>
 </nav>
 
 <style>
@@ -79,6 +83,12 @@
     background: var(--accent-soft);
     color: #fff;
     box-shadow: inset 2px 0 0 var(--accent);
+  }
+  .foot {
+    margin-top: auto;
+    display: flex;
+    justify-content: center;
+    padding-bottom: 4px;
   }
   .lbl {
     font-size: 13px;

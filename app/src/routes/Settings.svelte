@@ -12,6 +12,7 @@
   import { ACTION_LABELS, comboLabel, comboOf, type Action } from '../lib/keys';
   import Calibration from '../lib/ui/Calibration.svelte';
   import { achievements } from '../lib/achievements/store.svelte';
+  import MadeBy from '../lib/ui/MadeBy.svelte';
 
   let cameras = $state<MediaDeviceInfo[]>([]);
   let audioOuts = $state<{ id: string; name: string }[]>([]);
@@ -172,6 +173,15 @@
         <label class="row"><input type="checkbox" bind:checked={settings.s.reducedMotion} /> Reduced motion</label>
         <label class="row"><input type="checkbox" bind:checked={settings.s.highContrast} /> High contrast</label>
         <label class="row"><input type="checkbox" bind:checked={settings.s.telemetry} /> Anonymous usage telemetry (off by default; nothing is sent in this build)</label>
+      </section>
+
+      <section class="glass card col">
+        <h3>About</h3>
+        <p>Gesture Synth. Play chords with your hands, loop them, watch the harmony. Open source under the MIT license.</p>
+        <div class="row wrap">
+          <MadeBy />
+          <MadeBy href="https://github.com/Londopy/gesture-synth/issues/new/choose" label="Report a problem" />
+        </div>
       </section>
 
       <section class="glass card col">
