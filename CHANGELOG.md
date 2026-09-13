@@ -7,7 +7,7 @@ All notable changes to Gesture Synth are documented here. The format follows [Ke
 ### Added
 
 - Release workflow: builds the macOS Apple Silicon `.dmg` alongside Windows and Linux (arm64 only, no Homebrew, 45 min timeout, `continue-on-error` so a hung Mac runner cannot block the release). The opt-in macOS workflow remains for Intel builds and re-runs.
-- Community service: applies `sql/schema.sql` on startup (idempotent), waits for the database pool before serving, and accepts hosted Postgres connection strings as pasted from Neon, Supabase or Render (adds the default port and `sslmode=require` when missing). No manual schema step is needed any more.
+- Community service: applies `sql/schema.sql` on startup (idempotent), waits for the database pool before serving, and accepts hosted Postgres connection strings as pasted from Neon, Supabase or Render (adds the default port, uses verified TLS so the server name is sent, passes Neon's endpoint id). No manual schema step is needed any more.
 
 ### Changed
 
@@ -15,6 +15,7 @@ All notable changes to Gesture Synth are documented here. The format follows [Ke
 
 ### Fixed
 
+- Render static site build: installs a private Rust toolchain in `$HOME` (`scripts/render-build.sh`) because the build image's Rust under `/usr/local` is read-only and blocked both rustup-init and `rustup target add`.
 - Community service Docker image: the container failed to start on Render with `exec ./entrypoint.sh: exec format error` because Gleam 1.18 writes license comments above the shebang in the generated shipment script; the Dockerfile now runs it through `sh`, and the runtime stage uses the same Erlang/OTP image as the build stage (an older runtime OTP refused to load the compiled modules and crashed at boot with `undef community@@main:run`).
 
 ## [0.2.0] - 2026-09-13

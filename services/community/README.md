@@ -47,8 +47,12 @@ DATABASE_URL=postgres://user:pass@localhost:5432/gesture_synth_community gleam r
 
 On startup the service waits for the pool to connect (10 s), then applies
 `sql/schema.sql` from the working directory; the file is idempotent so this
-is safe on every boot. Hosted connection strings without a port or `sslmode`
-(Neon, Supabase, Render) are normalised to `:5432` and `sslmode=require`.
+is safe on every boot. Hosted connection strings (Neon, Supabase, Render) are
+normalised: a missing port becomes `:5432`, and a missing `sslmode` or
+`sslmode=require` becomes `sslmode=verify-full` on non-local hosts, because
+pog only sends the TLS server name (SNI) when verifying and Neon routes on it.
+For `*.neon.tech` hosts the endpoint id is also passed as
+`options=endpoint=<id>`, Neon's fallback for clients without SNI.
 To manage the schema yourself, run `psql "$DATABASE_URL" -f sql/schema.sql`
 and start the service from a directory without `sql/`.
 

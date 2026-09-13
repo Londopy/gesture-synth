@@ -29,12 +29,21 @@ import simplifile
 /// Start a connection pool for `database_url` and return a `Store` using it.
 pub fn new(database_url: String) -> Result(Store, String) {
   let name = process.new_name("community_postgres")
+  let url = normalise_url(database_url)
   use config <- result.try(
-    pog.url_config(name, normalise_url(database_url))
+    pog.url_config(name, url)
     |> result.replace_error(
       "DATABASE_URL is not a valid postgres:// connection URL",
     ),
   )
+  let config = case neon_endpoint(url) {
+    // Neon routes by SNI; pog only sends SNI in verify-full mode, which
+    // normalise_url selects. Neon's documented fallback for clients without
+    // SNI is the endpoint id as a startup parameter, so pass it too.
+    Some(endpoint) ->
+      pog.connection_parameter(config, "options", "endpoint=" <> endpoint)
+    None -> config
+  }
   use started <- result.try(
     config
     |> pog.pool_size(10)
@@ -51,7 +60,9 @@ pub fn new(database_url: String) -> Result(Store, String) {
 
 /// Make hosted-Postgres connection strings work as pasted. `pog.url_config`
 /// insists on an explicit port and only enables TLS when `sslmode` is in the
-/// URL; Neon, Supabase and Render omit the port and require TLS.
+/// URL; Neon, Supabase and Render omit the port and require TLS. `require` is
+/// upgraded to `verify-full` for non-local hosts: pog only sends the TLS
+/// server name (SNI) when verifying, and Neon rejects connections without it.
 pub fn normalise_url(database_url: String) -> String {
   case uri.parse(database_url) {
     Error(_) -> database_url
@@ -63,15 +74,30 @@ pub fn normalise_url(database_url: String) -> String {
       }
       let query = case parsed.query, local {
         Some(q), _ if q != "" ->
-          case string.contains(q, "sslmode=") {
-            True -> Some(q)
-            False -> Some(q <> "&sslmode=require")
+          case string.contains(q, "sslmode="), local {
+            True, False ->
+              Some(string.replace(q, "sslmode=require", "sslmode=verify-full"))
+            True, True -> Some(q)
+            False, False -> Some(q <> "&sslmode=verify-full")
+            False, True -> Some(q)
           }
         _, True -> None
-        _, False -> Some("sslmode=require")
+        _, False -> Some("sslmode=verify-full")
       }
       uri.Uri(..parsed, port:, query:) |> uri.to_string
     }
+  }
+}
+
+/// `ep-cool-name-123456-pooler` for a `*.neon.tech` host, else None.
+pub fn neon_endpoint(database_url: String) -> Option(String) {
+  case uri.parse(database_url) {
+    Ok(uri.Uri(host: Some(host), ..)) if host != "" ->
+      case string.ends_with(host, ".neon.tech"), string.split(host, ".") {
+        True, [endpoint, ..] -> Some(endpoint)
+        _, _ -> None
+      }
+    _ -> None
   }
 }
 

@@ -1,22 +1,39 @@
 import community/store/postgres
+import gleam/option
 import gleeunit/should
 
-// Neon's connection string: no port, sslmode already present.
-pub fn neon_url_keeps_sslmode_and_adds_port_test() {
+// Neon's connection string: no port, sslmode=require. The port is added and
+// require becomes verify-full so pog sends SNI (Neon routes on it).
+pub fn neon_url_gets_port_and_verify_full_test() {
   postgres.normalise_url(
     "postgresql://user:pw@ep-cool-name-pooler.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require",
   )
   |> should.equal(
-    "postgresql://user:pw@ep-cool-name-pooler.us-east-2.aws.neon.tech:5432/neondb?sslmode=require&channel_binding=require",
+    "postgresql://user:pw@ep-cool-name-pooler.us-east-2.aws.neon.tech:5432/neondb?sslmode=verify-full&channel_binding=require",
   )
 }
 
-// Render / Supabase style: no port, no query at all -> TLS is required.
+pub fn neon_endpoint_is_the_first_host_label_test() {
+  postgres.neon_endpoint(
+    "postgresql://u:p@ep-cool-name-pooler.us-east-2.aws.neon.tech/neondb",
+  )
+  |> should.equal(option.Some("ep-cool-name-pooler"))
+  postgres.neon_endpoint("postgres://u:p@db.example.com/x")
+  |> should.equal(option.None)
+}
+
+// Render / Supabase style: no port, no query at all -> verified TLS.
 pub fn hosted_url_without_query_gets_sslmode_test() {
   postgres.normalise_url("postgres://u:p@dpg-abc.oregon-postgres.render.com/db")
   |> should.equal(
-    "postgres://u:p@dpg-abc.oregon-postgres.render.com:5432/db?sslmode=require",
+    "postgres://u:p@dpg-abc.oregon-postgres.render.com:5432/db?sslmode=verify-full",
   )
+}
+
+// A local sslmode=require is left as it is (self-signed dev certs).
+pub fn local_sslmode_require_is_kept_test() {
+  postgres.normalise_url("postgres://u:p@localhost:5432/x?sslmode=require")
+  |> should.equal("postgres://u:p@localhost:5432/x?sslmode=require")
 }
 
 // Local development stays plain.

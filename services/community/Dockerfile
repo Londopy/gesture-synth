@@ -11,6 +11,8 @@ RUN gleam export erlang-shipment
 # build OTP refuses to load the .beam files, which surfaces as
 # "undef community@@main:run" at boot.
 FROM ghcr.io/gleam-lang/gleam:v1.18.1-erlang-alpine
+# CA bundle for verified TLS to hosted Postgres (sslmode=verify-full).
+RUN apk add --no-cache ca-certificates
 WORKDIR /app
 COPY --from=build /app/build/erlang-shipment ./
 # The service applies this idempotent schema on startup when DATABASE_URL is set.

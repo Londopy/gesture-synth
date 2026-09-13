@@ -37,8 +37,9 @@ The Gleam service runs from `services/community/Dockerfile`.
 
 Free Postgres for `DATABASE_URL`: [Neon](https://neon.tech) or
 [Supabase](https://supabase.com). Paste the connection string as given; the
-service adds the default port and `sslmode=require` if they are missing, and
-applies `sql/schema.sql` itself on startup (every statement is `IF NOT EXISTS`).
+service adds the default port, upgrades to verified TLS (`sslmode=verify-full`,
+needed for Neon's SNI routing), and applies `sql/schema.sql` itself on startup
+(every statement is `IF NOT EXISTS`).
 
 Required env: `PORT`, `FRONTEND_ORIGIN` (where `/s/<code>` short links
 redirect), `CORS_ORIGIN` (set it to the app origin, not `*`, in production),
