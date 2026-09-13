@@ -7,8 +7,10 @@ COPY src ./src
 COPY sql ./sql
 RUN gleam export erlang-shipment
 
-FROM erlang:27-alpine
-RUN apk add --no-cache libstdc++ ncurses-libs
+# Run on the same image the code was compiled with. A runtime OTP older than the
+# build OTP refuses to load the .beam files, which surfaces as
+# "undef community@@main:run" at boot.
+FROM ghcr.io/gleam-lang/gleam:v1.18.1-erlang-alpine
 WORKDIR /app
 COPY --from=build /app/build/erlang-shipment ./
 ENV PORT=8787

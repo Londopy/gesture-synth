@@ -6,7 +6,7 @@ All notable changes to Gesture Synth are documented here. The format follows [Ke
 
 ### Fixed
 
-- Community service Docker image: the container failed to start on Render with `exec ./entrypoint.sh: exec format error` because Gleam 1.18 writes license comments above the shebang in the generated shipment script; the Dockerfile now runs it through `sh`.
+- Community service Docker image: the container failed to start on Render with `exec ./entrypoint.sh: exec format error` because Gleam 1.18 writes license comments above the shebang in the generated shipment script; the Dockerfile now runs it through `sh`, and the runtime stage uses the same Erlang/OTP image as the build stage (an older runtime OTP refused to load the compiled modules and crashed at boot with `undef community@@main:run`).
 
 ## [0.2.0] - 2026-09-13
 
