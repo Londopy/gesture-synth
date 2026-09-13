@@ -1,0 +1,62 @@
+# Render blueprint: one static site (the app) + one web service (the Gleam
+# community API). Both fit Render's free tier. After the first deploy, set
+# VITE_COMMUNITY_URL on the static site to the API's onrender.com URL and
+# FRONTEND_ORIGIN / CORS_ORIGIN on the API to the static site's URL.
+services:
+  - type: web
+    name: gesture-synth
+    runtime: static
+    rootDir: .
+    buildCommand: >-
+      curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --target wasm32-unknown-unknown &&
+      . "$HOME/.cargo/env" &&
+      npm ci --ignore-scripts &&
+      node scripts/fetch-models.mjs &&
+      npm run build
+    staticPublishPath: app/dist
+    pullRequestPreviewsEnabled: false
+    headers:
+      - path: /*
+        name: Cross-Origin-Opener-Policy
+        value: same-origin
+      - path: /*
+        name: Cross-Origin-Embedder-Policy
+        value: require-corp
+      - path: /*
+        name: Cross-Origin-Resource-Policy
+        value: cross-origin
+      - path: /assets/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
+      - path: /models/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_COMMUNITY_URL
+        value: https://gesture-synth-api.onrender.com
+      - key: NODE_VERSION
+        value: "22"
+
+  - type: web
+    name: gesture-synth-api
+    runtime: docker
+    rootDir: services/community
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: "8787"
+      - key: FRONTEND_ORIGIN
+        value: https://gesture-synth.onrender.com
+      - key: CORS_ORIGIN
+        value: https://gesture-synth.onrender.com
+      - key: SECRET_KEY_BASE
+        generateValue: true
+      # Uncomment to persist data (free Postgres on Neon/Supabase or a Render database):
+      # - key: DATABASE_URL
+      #   sync: false
