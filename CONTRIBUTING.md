@@ -72,6 +72,8 @@ real parser, worklet engine and scene without a webcam.
 - **An instrument preset**: `crates/gsyn-core/src/instruments.rs` (`BUILTIN_NAMES` + a constructor) and the `INSTRUMENTS` lists in the UI.
 - **A visual theme**: `app/src/lib/themes.ts`.
 - **A view mode or scene layer**: `app/src/lib/scene/scene.ts` (`setView`) and the `Layer` interface in `scene/types.ts`; keep clear-camera mode effect-free.
+- **A secret gesture**: `app/src/lib/eggs/detect.ts` (detection, with a unit test in `detect.test.ts`), `effects.ts` (what it draws), and `EGG_INFO` for the emoji, name and hint. Rules: it must not collide with a playing gesture, needs a hold time and a cooldown, and must never change the music.
+- **Screenshots for docs**: `npm install --no-save puppeteer-core && npm run serve` in one terminal, `node scripts/shots.mjs` in another; `node scripts/render-cheatsheet.mjs` regenerates `docs/cheatsheet.svg`.
 - **Recording sources**: `app/src/lib/export/recorder.ts` (MediaRecorder) and `RecordSheet.svelte`; audio always comes from the worklet record mix so the metronome stays out.
 - **A file format field**: add it with `#[serde(default)]` so old files still load, bump `FORMAT_VERSION` only for breaking changes, and add a round-trip test in `session.rs`.
 - **A community endpoint**: `services/community/src/community/router.gleam` + handler module + `test/community_test.gleam` + the `CommunityApi` client in `app/src/lib/community/api.ts`.

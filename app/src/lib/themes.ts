@@ -25,9 +25,9 @@ export const THEMES: Record<string, Theme> = {
   Neon: {
     name: 'Neon',
     palette: {
-      bgHueShift: 0,
-      bgSaturation: 0.55,
-      bgLightness: 0.08,
+      bgHueShift: 200,
+      bgSaturation: 0.5,
+      bgLightness: 0.085,
       major: '#ffb347',
       minor: '#7b8cff',
       ring: '#9fb4ff',
@@ -120,6 +120,10 @@ export const THEMES: Record<string, Theme> = {
 };
 
 export const THEME_NAMES = Object.keys(THEMES);
+/** Names to show in pickers: built-ins plus anything unlocked or imported at runtime. */
+export function visibleThemeNames(): string[] {
+  return Object.keys(THEMES);
+}
 
 export function getTheme(name: string): Theme {
   return THEMES[name] ?? THEMES.Neon;

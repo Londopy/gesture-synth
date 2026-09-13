@@ -9,6 +9,8 @@
   import { ui } from '../state/ui.svelte';
   import { getTheme } from '../themes';
   import { hueOf } from '../music';
+  import { EggDetector } from '../eggs/detect';
+  import { fireEgg } from '../eggs/effects';
 
   let { learn = null, onready }: { learn?: (() => LearnTarget | null) | null; onready?: (s: GestureScene) => void } = $props();
 
@@ -20,6 +22,7 @@
   onMount(() => {
     scene = new GestureScene(canvas);
     onready?.(scene);
+    const eggs = new EggDetector();
     let last = performance.now();
     let raf = 0;
     let hudTick = 0;
@@ -84,6 +87,9 @@
         gh.state = rt.tracks[i];
       }
       frame.learn = learn ? learn() : null;
+      if (settings.s.eggsEnabled && rt.phase === 'ready') {
+        for (const e of eggs.update(now, rt.left, rt.right, rt.leftLandmarks, rt.rightLandmarks)) fireEgg(e, scene, frame.mirror);
+      }
       scene.setView(ui.performance && settings.s.viewMode !== 'clear' ? 'performance' : settings.s.viewMode, settings.s.clearShowHands, frame.mirror);
       scene.render(frame);
       if (++hudTick % 30 === 0) {
@@ -92,6 +98,8 @@
       }
     };
     raf = requestAnimationFrame(loop);
+    // dev hook: step one frame by hand (rAF is paused in hidden tabs / headless runs)
+    (window as any).__gsyn && ((window as any).__gsyn.tick = (ms = 33) => { cancelAnimationFrame(raf); last = performance.now() - ms; loop(performance.now()); });
     const ro = new ResizeObserver(() => scene?.resize());
     ro.observe(canvas);
     // attach the camera video once it exists

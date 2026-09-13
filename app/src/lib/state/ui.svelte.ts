@@ -29,6 +29,15 @@ class UiStore {
   confirm = $state<ConfirmRequest | null>(null);
   chordPopover = $state<{ track: number; step: number; x: number; y: number } | null>(null);
   hudVisible = $state(true);
+  /** easter-egg emoji pop */
+  egg = $state<{ id: string; emoji: string; text: string; seq: number } | null>(null);
+  private eggTimer = 0;
+  private eggSeq = 0;
+  showEgg(id: string, emoji: string, text: string, ms = 1900) {
+    this.egg = { id, emoji, text, seq: ++this.eggSeq };
+    clearTimeout(this.eggTimer);
+    this.eggTimer = window.setTimeout(() => (this.egg = null), ms);
+  }
   private hudTimer = 0;
   private toastId = 1;
 

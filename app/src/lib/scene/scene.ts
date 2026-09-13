@@ -46,6 +46,9 @@ export class GestureScene {
   bloomEnabled = true;
   hazeEnabled = true;
   private pulse = 0;
+  /** easter egg: the whole world turns upside down until this time (seconds) */
+  flipUntil = 0;
+  private flipAmount = 0;
   private lastBeatSeq = -1;
   private disposed = false;
 
@@ -170,6 +173,9 @@ export class GestureScene {
     this.pulse = Math.max(0, this.pulse - f.dt * 4);
     f.beatPulse = this.pulse;
     this.world.scale.setScalar(1 + this.pulse * 0.04);
+    const flipTarget = f.time < this.flipUntil ? 1 : 0;
+    this.flipAmount += (flipTarget - this.flipAmount) * Math.min(1, f.dt * 5);
+    this.world.rotation.z = this.flipAmount * Math.PI;
 
     for (const l of this.layers) l.update(f);
     const clear = this.viewMode === 'clear';

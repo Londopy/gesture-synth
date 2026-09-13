@@ -60,6 +60,15 @@
   </div>
 {/if}
 
+{#if ui.egg}
+  {#key ui.egg.seq}
+    <div class="egg" aria-live="polite">
+      <span class="emoji">{ui.egg.emoji}</span>
+      <span class="eggname display">{ui.egg.text}</span>
+    </div>
+  {/key}
+{/if}
+
 {#if rt.position.countIn != null}
   <div class="countin display">{rt.position.countIn}</div>
 {/if}
@@ -169,6 +178,50 @@
     margin-top: 22px;
     font-size: 10px;
     color: var(--text-faint);
+  }
+  .egg {
+    position: absolute;
+    left: 50%;
+    top: 46%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    pointer-events: none;
+    animation: eggpop 1.9s var(--ease) both;
+  }
+  .egg .emoji {
+    font-size: clamp(90px, 18vh, 200px);
+    line-height: 1;
+    filter: drop-shadow(0 0 30px rgba(255, 255, 255, 0.45));
+  }
+  .egg .eggname {
+    font-size: 26px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #fff;
+    text-shadow: 0 0 20px var(--accent-glow);
+  }
+  @keyframes eggpop {
+    0% {
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(0.4);
+    }
+    18% {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1.12);
+    }
+    30% {
+      transform: translate(-50%, -50%) scale(1);
+    }
+    80% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+      transform: translate(-50%, -58%) scale(1.05);
+    }
   }
   .countin {
     position: absolute;

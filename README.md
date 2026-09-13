@@ -70,7 +70,81 @@ ghost hands replaying your loops.
 It ships as a **Tauri desktop app** (native audio thread, MIDI out, ffmpeg
 export) and as a **web app** at the same URL structure (installable PWA,
 offline after first load), from one codebase. Sessions are byte-identical on
+<p align="center">
+  <a href="#quick-start"><b>Quick start</b></a> ·
+  <a href="#how-you-play"><b>How you play</b></a> ·
+  <a href="#secrets"><b>Secrets</b></a> ·
+  <a href="#download-instead-of-building"><b>Download</b></a> ·
+  <a href="DEPLOY.md"><b>Deploy</b></a> ·
+  <a href="CHANGELOG.md"><b>Changelog</b></a> ·
+  <a href="CONTRIBUTING.md"><b>Contributing</b></a>
+</p>
+
+<p align="center">
+  <img src="docs/shots/hero.png" alt="Gesture Synth playing a IV maj7 in D major: two wireframe hands, the circle of fifths, the note constellation" width="100%">
+</p>
+
+<p align="center"><sub>Left hand: four fingers = <b>IV</b>, palm tilted in = major. Right hand: three fingers = <b>seventh</b>. That's a IV maj7. The ring walks with the chord root, the constellation is the voicing, the tag says the chord is latched.</sub></p>
+
+---
+
+## What it is
+
+Left hand picks the chord: scale degree from which fingers are up, major or
+minor from the palm tilt. Right hand shapes it: inversion, sevenths, octave
+with the thumb, filter with tilt, volume with height. A loop pedal records
+gesture performances into four tracks against a metronome. Everything you play
+is drawn back at you as a harmony-aware scene: wireframe hands, a note
+constellation, the circle of fifths, audio-reactive particles, and translucent
+ghost hands replaying your loops.
+
+It ships as a **Tauri desktop app** (native audio thread, MIDI out, ffmpeg
+export) and as a **web app** at the same URL structure (installable PWA,
+offline after first load), from one codebase. Sessions are byte-identical on
 both, so a loop made in the browser opens on desktop and vice versa.
+
+<table>
+<tr>
+<td width="33%" valign="top">
+
+### 🖐️ Play
+Seven degrees, four shapes, octave, filter and volume, all from two hands. Chord legato keeps common tones ringing. Theremin mode for continuous pitch.
+
+</td>
+<td width="33%" valign="top">
+
+### 🔁 Loop
+A real loop pedal: count-in, four layered tracks, overdub or replace, quantized onsets, a 16th-note mute grid, mixer, and chord editing after the fact. Loops are events, not audio, so you can swap instruments later.
+
+</td>
+<td width="33%" valign="top">
+
+### ✨ Watch
+Sixty-fps scene that reacts to harmony and dynamics: key-tinted background, circle of fifths, constellation, 20k particles, filter haze, ghost hands. The chrome tints with the key too.
+
+</td>
+</tr>
+<tr>
+<td valign="top">
+
+### 🎓 Learn
+Song tutorials show the next hand shapes as an outline with a countdown; your hand turns green on a match. Score is timing + shape. Slow down, loop a section.
+
+</td>
+<td valign="top">
+
+### 🎬 Record
+Clear camera view for framing yourself, then record the scene or the raw camera with the instrument mix and an optional microphone. webm instantly, mp4 on save.
+
+</td>
+<td valign="top">
+
+### 🌐 Share
+Publish loops, songs, presets and themes to a community service with likes, comments and remix chains. Export `.mid`, `.wav`, `.gsyn.json`. Short links open straight into the app.
+
+</td>
+</tr>
+</table>
 
 ## Quick start
 
@@ -84,16 +158,20 @@ npm run dev        # http://localhost:5173
 
 Click **Start**, allow the camera, hold both hands up side by side with palms
 toward the camera. Index finger up on the left hand plays **I**. Press `H` for
-the gesture cheat sheet, `R` to record a loop.
+the cheat sheet, `R` to record a loop, `C` for the clear camera view.
 
 Desktop:
 
 ```bash
-node scripts/fetch-ffmpeg.mjs   # optional: mp4 export sidecar
-npm run tauri:dev               # or: npm run tauri:build
+node scripts/fetch-ffmpeg.mjs --static   # optional: mp4 export sidecar
+npm run tauri:dev                        # or: npm run tauri:build
 ```
 
 ## How you play
+
+<p align="center">
+  <img src="docs/cheatsheet.svg" alt="Gesture cheat sheet: left-hand finger patterns for degrees I to VII and mute; right-hand finger counts for triad, inversion, seventh, dom7; thumb for octave; tilt for filter" width="100%">
+</p>
 
 | Left hand | Chord degree | Right hand | Shape |
 | --- | --- | --- | --- |
@@ -107,18 +185,77 @@ npm run tauri:dev               # or: npm run tauri:build
 | fist | mute | pinch | arpeggiator (height = rate) |
 | tilt inward / outward | major / minor | | |
 
-Views: `C` cycles **performance** (wireframe only), **practice** (your hands
-under a dark tint) and **clear camera** (the plain picture, no effects).
-`Ctrl/Cmd+Shift+R` opens the **recorder**: scene or raw camera, instrument
-audio, optional microphone, saved as webm or mp4.
-
 Extras: flick the left hand toward the camera for a bass note, touch both fists
 and rotate to change key around the circle of fifths, hold still for two
 seconds to latch the chord. `Tab` switches to **Theremin** mode (right height =
 pitch, left height = volume). Simplified schemes (scale-only, fixed degree,
 fixed style, dynamics only) live in the top-left menu.
 
-## What is in the box
+Views: `C` cycles **performance** (wireframe only), **practice** (your hands
+under a dark tint) and **clear camera** (the plain picture, no effects).
+`Ctrl/Cmd+Shift+R` opens the **recorder**.
+
+<details>
+<summary><b>More screenshots</b></summary>
+<br>
+
+| Beat grid and mixer | Theremin mode |
+| --- | --- |
+| ![Beat grid](docs/shots/grid.png) | ![Theremin](docs/shots/theremin.png) |
+
+| Help: gesture sheet | Recorder |
+| --- | --- |
+| ![Help](docs/shots/help-gestures.png) | ![Recorder](docs/shots/recorder.png) |
+
+</details>
+
+## Secrets
+
+<p align="center">
+  <img src="docs/shots/egg-heart.png" alt="A particle heart drawn between two hands making a finger heart" width="70%">
+</p>
+
+There are ten hidden gestures. They never change the music, they just make the
+scene do something. **Help › Secrets** keeps score and gives a hint for each one
+you haven't found. The first is the easiest: make a heart with both hands.
+
+## Download instead of building
+
+Every [release](https://github.com/Londopy/gesture-synth/releases) has Windows
+(.msi) and Linux (.AppImage, .deb) installers (macOS: opt-in build or from
+source, see [DEPLOY.md](DEPLOY.md)), a zip of the website you can run on your
+own computer with one command (`node serve.mjs`, then open
+http://localhost:4173), `SHA256SUMS.txt` to verify downloads, and an install
+tutorial in the release notes. The notes are generated from
+[CHANGELOG.md](CHANGELOG.md) by [patchnotes](https://pypi.org/project/patchnotes/),
+which also validates the changelog in CI and publishes the changelog badge above.
+
+## How it works
+
+```mermaid
+flowchart LR
+    cam[📷 Camera] -->|getUserMedia| mp[MediaPipe<br/>Hand Landmarker]
+    mp -->|21 × 2 landmarks<br/>30–60 Hz| parser[Rust GestureParser<br/>WASM on the main thread]
+    parser -->|MusicalState + events| xfer{{SharedArrayBuffer ring<br/>or Tauri IPC}}
+    xfer --> engine[Rust Engine<br/>AudioWorklet or cpal thread]
+    engine --> synth[Synth · legato voices<br/>SVF · FDN reverb · limiter]
+    engine --> looper[Loop engine<br/>4 event tracks · curves]
+    looper --> synth
+    synth --> out[🔊 Speakers]
+    engine -.->|MIDI| midi[🎹 MIDI out]
+    parser -.->|60 Hz state| scene[Three.js scene<br/>hands · ring · constellation · particles]
+    engine -.->|position · track state| scene
+    scene --> ui[Svelte 5 chrome<br/>tinted by the key hue]
+```
+
+Exactly one producer owns each slot: the parser owns the live slot, the loop
+engine owns the four track slots. The synth and the renderer are pure
+consumers. Loops are stored as timestamped events and 100 Hz parameter curves,
+not audio, so instruments can change after recording and files stay tiny.
+
+<details>
+<summary><b>What is in the box</b></summary>
+<br>
 
 | Path | What | Language |
 | --- | --- | --- |
@@ -130,28 +267,20 @@ fixed style, dynamics only) live in the top-left menu.
 | `services/community` | accounts, uploads, likes, comments, remix chains, short links | Gleam |
 | `content` | sample songs, instrument and theme files | JSON |
 
-Pages: **Play**, **Learn** (song tutorials with ghost target outlines and a
-timing + shape score), **Song Builder** (type `ii7 V7 Imaj7` or click degrees,
-generate a tutorial or drop it into a track), **Instruments** (live preset
-editor), **Visuals** (five themes), **Community**, **Settings**.
+Pages: **Play**, **Learn**, **Song Builder** (type `ii7 V7 Imaj7` or click
+degrees, generate a tutorial or drop it into a track), **Instruments** (live
+preset editor), **Visuals** (five themes plus one you have to unlock),
+**Community**, **Settings**.
 
 Exports: `.session.gsyn.json`, `.mid` (one track per loop), `.wav` (offline
-bounce), `.webm` clip (scene + audio, metronome excluded), `.mp4` (ffmpeg
-sidecar on desktop, ffmpeg.wasm in cross-origin-isolated browsers).
+bounce), `.webm` (scene or camera + audio + mic), `.mp4` (ffmpeg sidecar on
+desktop, ffmpeg.wasm in cross-origin-isolated browsers).
 
-## Architecture in one paragraph
+</details>
 
-The camera feeds MediaPipe Hand Landmarker in the webview. Landmarks go to the
-Rust gesture parser, which produces a `MusicalState` plus one-shot events.
-Exactly one producer owns each slot: the parser owns the live slot, the loop
-engine owns the four track slots. The synth and the renderer are pure
-consumers. On desktop the state crosses to a native cpal audio thread through
-a lock-free triple buffer; in the browser it crosses to an AudioWorklet through
-a SharedArrayBuffer ring (postMessage fallback without cross-origin isolation).
-Loops are stored as timestamped events and 100 Hz parameter curves, not audio,
-so instruments can change after recording and files stay tiny.
-
-## Requirements
+<details>
+<summary><b>Requirements</b></summary>
+<br>
 
 | Tool | Version | Needed for |
 | --- | --- | --- |
@@ -162,19 +291,11 @@ so instruments can change after recording and files stay tiny.
 | ffmpeg | any | optional mp4 export |
 | Tauri prerequisites | | desktop build ([docs](https://v2.tauri.app/start/prerequisites/)) |
 
-## Download instead of building
+</details>
 
-Every [release](https://github.com/Londopy/gesture-synth/releases) has Windows
-(.msi) and Linux (.AppImage, .deb) installers (macOS: build from source, see
-[DEPLOY.md](DEPLOY.md)), a zip of the
-website you can run on your own computer with one command (`node serve.mjs`,
-then open http://localhost:4173), `SHA256SUMS.txt` to verify downloads, and an
-install tutorial in the release notes. The notes are generated from
-[CHANGELOG.md](CHANGELOG.md) by [patchnotes](https://pypi.org/project/patchnotes/),
-which also validates the changelog in CI and publishes the changelog badge above.
-`npm run serve` runs the same local server against your own build.
-
-## Hosting the web build
+<details>
+<summary><b>Hosting the web build</b></summary>
+<br>
 
 Cross-origin isolation gives the app SharedArrayBuffer (lower latency, mp4 in
 the browser):
@@ -184,15 +305,20 @@ Cross-Origin-Opener-Policy: same-origin
 Cross-Origin-Embedder-Policy: require-corp
 ```
 
-`app/public/_headers` (Netlify, Cloudflare Pages) and `app/vercel.json` set
-them. Without them the app still runs with one camera frame of extra latency
-and webm-only export.
+`app/public/_headers` (Netlify, Cloudflare Pages), `app/vercel.json` and
+`render.yaml` set them. Without them the app still runs with one camera frame
+of extra latency and webm-only export. Free-tier options are compared in
+[DEPLOY.md](DEPLOY.md).
 
 Community service: `cd services/community && gleam run` (in-memory store on
 `:8787`), or with `DATABASE_URL` for Postgres. See its
 [README](services/community/README.md).
 
-## Tests
+</details>
+
+<details>
+<summary><b>Tests</b></summary>
+<br>
 
 ```bash
 npm test                                   # core + frontend
@@ -203,13 +329,22 @@ cd services/community && gleam test        # 23 HTTP tests
 
 No camera? In the browser console,
 `window.__gsyn.synth(leftMask, rightMask, leftTilt, rightTilt, rightY)` feeds
-synthetic hands through the whole pipeline.
+synthetic hands through the whole pipeline, and `window.__gsyn.tick()` steps
+one frame. `node scripts/shots.mjs` uses both to take the screenshots on this
+page headlessly.
 
-## Keyboard
+</details>
+
+<details>
+<summary><b>Keyboard</b></summary>
+<br>
 
 `Space` play/stop · `R` record · `1-4` track · `M`/`S` mute/solo ·
 `Delete` clear · `Tab` theremin · `[`/`]` key · `-`/`=` BPM · `Esc` panic ·
-`F` performance view · `C` view mode · `G` grid · `H` help · `Ctrl/Cmd+Shift+R` record video · `Ctrl/Cmd+S` save · `Ctrl/Cmd+E` export
+`F` performance view · `C` view mode · `G` grid · `H` help ·
+`Ctrl/Cmd+Shift+R` record video · `Ctrl/Cmd+S` save · `Ctrl/Cmd+E` export
+
+</details>
 
 ## Contributing
 

@@ -3,7 +3,7 @@
   // feed on/off, bloom. Custom themes import/export as theme.gsyn.json.
   import { settings } from '../lib/state/settings.svelte';
   import { ui } from '../lib/state/ui.svelte';
-  import { THEMES, THEME_NAMES, getTheme, themeFromFile, themeToFile, type Theme } from '../lib/themes';
+  import { THEMES, visibleThemeNames, getTheme, themeFromFile, themeToFile, type Theme } from '../lib/themes';
   import { downloadFile, pickFile, sanitize, store } from '../lib/storage/store';
   import { CommunityApi } from '../lib/community/api';
 
@@ -57,14 +57,14 @@
       <section class="glass card col">
         <span class="label">Theme</span>
         <div class="themes">
-          {#each THEME_NAMES as n}
+          {#each visibleThemeNames() as n}
             {@const th = THEMES[n]}
             <button class="theme" class:active={settings.s.theme === n} onclick={() => (settings.s.theme = n)} style:--a={th.palette.major} style:--b={th.palette.minor} style:--r={th.palette.ring}>
               <span class="sw"></span>
               <span>{n}</span>
             </button>
           {/each}
-          {#each custom.filter((c) => !THEME_NAMES.includes(c.name)) as c}
+          {#each custom.filter((c) => !visibleThemeNames().includes(c.name)) as c}
             <button class="theme" class:active={settings.s.theme === c.name} onclick={() => loadCustom(c.name)}><span class="sw" style="--a:#888;--b:#444;--r:#aaa"></span><span>{c.name}</span></button>
           {/each}
         </div>

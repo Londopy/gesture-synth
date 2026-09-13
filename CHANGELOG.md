@@ -12,9 +12,13 @@ Versions follow [Semantic Versioning](https://semver.org/).
 - Video recorder (`Ctrl/Cmd+Shift+R` or the camera button): records the scene or the raw camera feed with the instrument mix (metronome excluded) and an optional microphone (device picker, gain, level meter) for singing or talking over a loop. Start/stop with a timer, preview, save as webm or mp4.
 - Release pipeline: pushing a `v*` tag builds Windows (.msi, setup .exe) and Linux (.AppImage, .deb) installers, a zip of the website with a zero-dependency local server (`node serve.mjs` on http://localhost:4173), `SHA256SUMS.txt`, and release notes generated from this changelog with patchnotes plus an install tutorial.
 - `scripts/serve.mjs` and `npm run serve` to run the built site locally with the cross-origin isolation headers.
+- Ten hidden gestures (secrets): finger heart, double thumbs up, wave, clap, both fists raised, OK sign, prayer hands, high five, the finger, and the Konami code (unlocks the Arcade theme). Each draws something in the scene and pops an emoji; none of them changes the music. Help › Secrets keeps score with hints, and a Settings toggle turns them off.
+- Headless screenshot script (`scripts/shots.mjs`) and cheat-sheet renderer (`scripts/render-cheatsheet.mjs`) that drive the camera-less dev hook; `window.__gsyn.tick()` steps one scene frame.
+- README: hero and feature screenshots, generated gesture cheat sheet, mermaid architecture diagram, collapsible reference sections, badge wall with the patchnotes changelog badge.
 
 ### Changed
 - The camera feed setting became the view mode setting; a saved "camera feed on" preference migrates to the practice view.
+- Background field uses a sin-free noise hash (the old one produced blocky squares on some GPUs) and the Neon theme background sits in the blue/violet range instead of olive for sharp keys.
 - CI and the release workflow no longer use hosted macOS runners (they hung without finishing); every job now has a timeout. macOS is an opt-in workflow (Apple Silicon runner, arm64 only, no Homebrew, 45 min timeout) that attaches a `.dmg` to an existing release; see DEPLOY.md.
 - `scripts/fetch-ffmpeg.mjs --static` falls back to the `ffmpeg-static` package when ffmpeg is not on PATH, so release builds never run without the sidecar.
 

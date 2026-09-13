@@ -80,6 +80,9 @@ export interface Settings {
   communityToken: string;
   communityHandle: string;
   flatNames: boolean;
+  /** easter eggs discovered (ids) */
+  eggsFound: string[];
+  eggsEnabled: boolean;
 }
 
 const KEY = 'gsyn.settings.v1';
@@ -150,6 +153,8 @@ export function defaultSettings(): Settings {
     communityToken: '',
     communityHandle: '',
     flatNames: false,
+    eggsFound: [],
+    eggsEnabled: true,
   };
 }
 

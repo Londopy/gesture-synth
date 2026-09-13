@@ -101,6 +101,43 @@ export class ParticlesLayer implements Layer {
     }
   }
 
+  /**
+   * Emit particles along a shape (xy pairs in scene units, relative to cx,cy).
+   * Used by the easter eggs: hearts, rings, columns. `radial` pushes points
+   * outward from the shape centre; otherwise they drift with `vy`.
+   */
+  emitShape(cx: number, cy: number, pts: Float32Array, hue: number, opts: { size?: number; life?: number; sat?: number; radial?: number; vy?: number; jitter?: number; perPoint?: number; hueSpread?: number } = {}) {
+    const { size = 6, life = 1.6, sat = 0.85, radial = 0, vy = 0.08, jitter = 0.01, perPoint = 1, hueSpread = 20 } = opts;
+    const n = pts.length / 2;
+    for (let k = 0; k < n; k++) {
+      const px = pts[k * 2];
+      const py = pts[k * 2 + 1];
+      for (let j = 0; j < perPoint; j++) {
+        const i = this.head;
+        this.head = (this.head + 1) % this.max;
+        this.count = Math.min(this.max, this.count + 1);
+        this.pos[i * 3] = cx + px + (Math.random() - 0.5) * jitter;
+        this.pos[i * 3 + 1] = cy + py + (Math.random() - 0.5) * jitter;
+        this.pos[i * 3 + 2] = 0.06;
+        const len = Math.hypot(px, py) + 1e-4;
+        this.vel[i * 3] = (px / len) * radial * (0.6 + Math.random() * 0.8) + (Math.random() - 0.5) * 0.05;
+        this.vel[i * 3 + 1] = (py / len) * radial * (0.6 + Math.random() * 0.8) + vy + (Math.random() - 0.5) * 0.05;
+        this.vel[i * 3 + 2] = 0;
+        const l = life * (0.7 + Math.random() * 0.6);
+        this.life[i] = l;
+        this.maxLife[i] = l;
+        this.tmpColor.setHSL(((hue + (Math.random() - 0.5) * hueSpread) / 360 + 1) % 1, sat, 0.6 + Math.random() * 0.25);
+        this.col[i * 3] = this.tmpColor.r;
+        this.col[i * 3 + 1] = this.tmpColor.g;
+        this.col[i * 3 + 2] = this.tmpColor.b;
+        this.size[i] = size * (0.6 + Math.random() * 0.8);
+        this.alpha[i] = 1;
+      }
+    }
+    this.dirtyStatic = true;
+  }
+  private dirtyStatic = false;
+
   update(f: SceneFrame): void {
     const dt = Math.min(0.05, f.dt);
     const L = f.left.landmarks;
@@ -191,9 +228,10 @@ export class ParticlesLayer implements Layer {
     this.geo.setDrawRange(0, this.count);
     (this.geo.attributes.position as THREE.BufferAttribute).needsUpdate = true;
     (this.geo.attributes.alpha as THREE.BufferAttribute).needsUpdate = true;
-    if (f.bursts.length || f.bassHits) {
+    if (f.bursts.length || f.bassHits || this.dirtyStatic) {
       (this.geo.attributes.color as THREE.BufferAttribute).needsUpdate = true;
       (this.geo.attributes.size as THREE.BufferAttribute).needsUpdate = true;
+      this.dirtyStatic = false;
     }
     this.mat.uniforms.uSparkle.value = Math.min(1, f.treble * 2.5);
     this.mat.uniforms.uTime.value = f.time;

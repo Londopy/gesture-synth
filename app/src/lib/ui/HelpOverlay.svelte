@@ -8,8 +8,10 @@
   import { leftFingersFor, rightFingersFor } from '../learn/songs';
   import { ROMAN } from '../music';
   import { rt } from '../state/engine.svelte';
+  import { EGG_IDS, EGG_INFO } from '../eggs/detect';
 
-  let tab = $state<'gestures' | 'shortcuts' | 'trouble'>('gestures');
+  let tab = $state<'gestures' | 'shortcuts' | 'trouble' | 'secrets'>('gestures');
+  const found = $derived(settings.s.eggsFound);
   const shapeLabels = ['Triad', '1st inversion', 'Seventh', 'Dom7 / m7b5'];
 </script>
 
@@ -20,6 +22,7 @@
         <button class:active={tab === 'gestures'} onclick={() => (tab = 'gestures')}>Gestures</button>
         <button class:active={tab === 'shortcuts'} onclick={() => (tab = 'shortcuts')}>Shortcuts</button>
         <button class:active={tab === 'trouble'} onclick={() => (tab = 'trouble')}>Troubleshooting</button>
+        <button class:active={tab === 'secrets'} onclick={() => (tab = 'secrets')}>Secrets {found.length ? `${found.length}/${EGG_IDS.length}` : ''}</button>
       </div>
       <div class="row">
         <button onclick={() => ui.startTour()}>Re-run tour</button>
@@ -60,6 +63,23 @@
         {/each}
         <div class="sc"><kbd>?</kbd><span>This help</span></div>
         <p class="hint">Edit shortcuts in Settings.</p>
+      </div>
+    {:else if tab === 'secrets'}
+      <div class="content">
+        <p>There are {EGG_IDS.length} hidden gestures. Found ones show their name; the rest only give a hint. They never change the music.</p>
+        <div class="secrets">
+          {#each EGG_IDS as id}
+            {@const got = found.includes(id)}
+            <div class="secret" class:got>
+              <span class="semoji">{got ? EGG_INFO[id].emoji : '?'}</span>
+              <div class="col" style="gap:2px">
+                <b>{got ? EGG_INFO[id].name : 'Not found yet'}</b>
+                <span class="shint">{EGG_INFO[id].hint}</span>
+              </div>
+            </div>
+          {/each}
+        </div>
+        <label class="row" style="margin-top:10px"><input type="checkbox" bind:checked={settings.s.eggsEnabled} /> Secrets enabled (turn off for a strict performance)</label>
       </div>
     {:else}
       <div class="content">
@@ -149,6 +169,34 @@
   }
   .sc kbd {
     min-width: 54px;
+  }
+  .secrets {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .secret {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 8px 12px;
+    opacity: 0.7;
+  }
+  .secret.got {
+    opacity: 1;
+    border-color: var(--accent);
+    background: var(--accent-soft);
+  }
+  .semoji {
+    font-size: 28px;
+    width: 40px;
+    text-align: center;
+  }
+  .shint {
+    font-size: 12px;
+    color: var(--text-dim);
   }
   .hint {
     grid-column: 1 / -1;

@@ -32,6 +32,10 @@
   import { learnState } from './routes/learn-state.svelte';
   import { store } from './lib/storage/store';
   import { flags } from './lib/platform';
+  import { Konami } from './lib/eggs/detect';
+  import { fireEgg, unlockArcadeTheme } from './lib/eggs/effects';
+  if (settings.s.eggsFound.includes('konami')) unlockArcadeTheme();
+  const konami = new Konami();
 
   let sceneCanvas: SceneCanvas;
   const page = $derived(router.route.page);
@@ -91,6 +95,11 @@
       return;
     }
     if (rt.phase !== 'ready') return;
+    if (settings.s.eggsEnabled && konami.key(e.key)) {
+      const sc = sceneCanvas?.getScene();
+      if (sc) fireEgg({ id: 'konami', x: 0.5, y: 0.5, sustain: false }, sc, true);
+      return;
+    }
     handleKeydown(e);
   }
 

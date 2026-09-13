@@ -3,7 +3,7 @@
   import { rt } from '../state/engine.svelte';
   import { settings } from '../state/settings.svelte';
   import { ui } from '../state/ui.svelte';
-  import { THEME_NAMES } from '../themes';
+  import { visibleThemeNames } from '../themes';
 
   const INSTRUMENTS = ['Pad', 'Keys', 'Organ', 'Pluck', 'Bass', 'Lead', 'Choir'];
   const isTheremin = $derived(settings.s.parser.mode === 'theremin');
@@ -25,7 +25,7 @@
   <label class="col">
     <span class="label">Theme</span>
     <select bind:value={settings.s.theme}>
-      {#each THEME_NAMES as n}<option value={n}>{n}</option>{/each}
+      {#each visibleThemeNames() as n}<option value={n}>{n}</option>{/each}
     </select>
   </label>
   <label class="col">
