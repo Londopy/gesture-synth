@@ -40,7 +40,7 @@ createdb gesture_synth_community
 
 DATABASE_URL=postgres://user:pass@localhost:5432/gesture_synth_community gleam run
 # community: store=postgres ...
-# community: database schema checked (19 statements)
+# community: database schema checked (15 statements)
 ```
 
 (On PowerShell: `$env:DATABASE_URL = "postgres://..."; gleam run`.)
