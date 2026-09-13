@@ -10,6 +10,12 @@
 </p>
 
 <p align="center">
+  <a href="https://gesture-synth.onrender.com"><img alt="Play it in your browser" src="https://img.shields.io/badge/%E2%96%B6%20Play%20it%20in%20your%20browser-gesture--synth.onrender.com-8b5cf6?style=for-the-badge"></a>
+  &nbsp;
+  <a href="https://github.com/Londopy/gesture-synth/releases/latest"><img alt="Download the desktop app" src="https://img.shields.io/badge/%E2%AC%87%20Download-desktop%20app-22c55e?style=for-the-badge"></a>
+</p>
+
+<p align="center">
   <a href="https://github.com/Londopy/gesture-synth/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/Londopy/gesture-synth/actions/workflows/ci.yml/badge.svg"></a>
   <a href="https://github.com/Londopy/gesture-synth/actions/workflows/release.yml"><img alt="Release" src="https://github.com/Londopy/gesture-synth/actions/workflows/release.yml/badge.svg"></a>
   <a href="CHANGELOG.md"><img alt="changelog" src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/Londopy/gesture-synth/gh-pages/changelog-badge.json"></a>
@@ -71,6 +77,7 @@ It ships as a **Tauri desktop app** (native audio thread, MIDI out, ffmpeg
 export) and as a **web app** at the same URL structure (installable PWA,
 offline after first load), from one codebase. Sessions are byte-identical on
 <p align="center">
+  <a href="https://gesture-synth.onrender.com"><b>Try it</b></a> ·
   <a href="#quick-start"><b>Quick start</b></a> ·
   <a href="#how-you-play"><b>How you play</b></a> ·
   <a href="#secrets"><b>Secrets</b></a> ·
@@ -153,6 +160,12 @@ Publish loops, songs, presets and themes to a community service with likes, comm
 </table>
 
 ## Quick start
+
+No install: open **[gesture-synth.onrender.com](https://gesture-synth.onrender.com)** in Chrome, Edge or
+Firefox, click **Start**, allow the camera. (The Community page's server sleeps when idle on the
+free tier and takes about 30 s to wake; playing does not depend on it.)
+
+From source:
 
 ```bash
 git clone https://github.com/Londopy/gesture-synth.git
