@@ -10,7 +10,7 @@ services:
     buildCommand: >-
       curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --target wasm32-unknown-unknown &&
       . "$HOME/.cargo/env" &&
-      npm ci --ignore-scripts &&
+      npm ci &&
       node scripts/fetch-models.mjs &&
       npm run build
     staticPublishPath: app/dist

@@ -49,7 +49,7 @@ jobs:
       - name: ffmpeg (Windows)
         if: matrix.name == 'windows'
         run: choco install ffmpeg -y --no-progress
-      - run: npm ci --ignore-scripts
+      - run: npm ci
       - run: node scripts/fetch-models.mjs
       - name: ffmpeg sidecar
         run: node scripts/fetch-ffmpeg.mjs --static
@@ -79,7 +79,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
-      - run: npm ci --ignore-scripts
+      - run: npm ci
       - run: node scripts/fetch-models.mjs
       - run: npm run build
       - name: Assemble local-server bundle

@@ -18,7 +18,7 @@ Cloudflare Pages and Netlify build images already ship Rust; on Render the
 blueprint installs it. Build command:
 
 ```bash
-npm ci --ignore-scripts && node scripts/fetch-models.mjs && npm run build
+npm ci && node scripts/fetch-models.mjs && npm run build
 ```
 
 Set `VITE_COMMUNITY_URL` to your API URL before building so the Community

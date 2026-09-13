@@ -37,7 +37,7 @@ jobs:
         with:
           node-version: "22"
           cache: npm
-      - run: npm ci --ignore-scripts
+      - run: npm ci
       - run: node scripts/fetch-models.mjs
       - name: ffmpeg sidecar (static binary, no Homebrew)
         run: node scripts/fetch-ffmpeg.mjs --static
@@ -77,7 +77,7 @@ jobs:
         with:
           node-version: "22"
           cache: npm
-      - run: npm ci --ignore-scripts
+      - run: npm ci
       - run: node scripts/fetch-models.mjs
       - run: node scripts/fetch-ffmpeg.mjs --static
       - run: npm run tauri:build -- --target x86_64-apple-darwin
