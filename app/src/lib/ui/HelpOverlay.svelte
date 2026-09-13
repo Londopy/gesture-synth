@@ -68,7 +68,7 @@
       </div>
     {:else if tab === 'secrets'}
       <div class="content">
-        <p>There are {EGG_IDS.length} hidden gestures. Found ones show their name; the rest only give a hint. They never change the music.</p>
+        <p>There are {EGG_IDS.length} hidden gestures. Each unfound one has a riddle, nothing more; find it and the list tells you how it was done. They never change the music.</p>
         <div class="secrets">
           {#each EGG_IDS as id}
             {@const got = found.includes(id)}
@@ -76,11 +76,12 @@
               <span class="semoji">{got ? EGG_INFO[id].emoji : '?'}</span>
               <div class="col" style="gap:2px">
                 <b>{got ? EGG_INFO[id].name : 'Not found yet'}</b>
-                <span class="shint">{EGG_INFO[id].hint}</span>
+                {#if got}<span class="shint">{EGG_INFO[id].how}</span>{:else}<span class="shint riddle">{EGG_INFO[id].riddle}</span>{/if}
               </div>
             </div>
           {/each}
         </div>
+        {#if found.length === EGG_IDS.length}<p class="hint">All {EGG_IDS.length} found. Nothing left to hide.</p>{/if}
         <label class="row" style="margin-top:10px"><input type="checkbox" bind:checked={settings.s.eggsEnabled} /> Secrets enabled (turn off for a strict performance)</label>
       </div>
     {:else}
@@ -195,6 +196,9 @@
     font-size: 28px;
     width: 40px;
     text-align: center;
+  }
+  .shint.riddle {
+    font-style: italic;
   }
   .shint {
     font-size: 12px;

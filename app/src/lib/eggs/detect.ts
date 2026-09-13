@@ -17,17 +17,23 @@ export interface EggEvent {
   sustain: boolean;
 }
 
-export const EGG_INFO: Record<EggId, { emoji: string; name: string; hint: string }> = {
-  heart: { emoji: '❤️', name: 'Finger heart', hint: 'Touch both index tips and both thumb tips together.' },
-  thumbs: { emoji: '👍', name: 'Double thumbs up', hint: 'Two thumbs, pointing up, hold a moment.' },
-  wave: { emoji: '👋', name: 'Wave', hint: 'Open hand, wave it side to side.' },
-  clap: { emoji: '👏', name: 'Clap', hint: 'Bring two open hands together fast.' },
-  fire: { emoji: '🔥', name: 'Power up', hint: 'Both fists raised high, apart.' },
-  ok: { emoji: '👌', name: 'Chef’s kiss', hint: 'Left hand OK sign, hold it.' },
-  prayer: { emoji: '🙏', name: 'Namaste', hint: 'Palms together in front of you.' },
-  highfive: { emoji: '✋', name: 'High five', hint: 'Push an open right hand at the camera.' },
-  flip: { emoji: '🙃', name: 'Rude', hint: 'One finger. You know which one.' },
-  konami: { emoji: '🕹️', name: 'Arcade', hint: 'Up up down down left right left right B A.' },
+/**
+ * Copy for Help › Secrets. `riddle` is all a player sees before finding one; it
+ * points at the idea, never at the fingers. `how` is the plain description,
+ * revealed only after the secret has fired once, so the list is a scoreboard
+ * rather than a walkthrough.
+ */
+export const EGG_INFO: Record<EggId, { emoji: string; name: string; riddle: string; how: string }> = {
+  heart: { emoji: '❤️', name: 'Finger heart', riddle: 'The shape everyone makes for a photo. Takes two hands here.', how: 'Touch both index tips and both thumb tips together.' },
+  thumbs: { emoji: '👍', name: 'Double thumbs up', riddle: 'Approve of it. Twice.', how: 'Two thumbs, pointing up, hold a moment.' },
+  wave: { emoji: '👋', name: 'Wave', riddle: 'Say hello to the camera.', how: 'Open hand, wave it side to side.' },
+  clap: { emoji: '👏', name: 'Clap', riddle: 'A round of applause. One will do.', how: 'Bring two open hands together fast.' },
+  fire: { emoji: '🔥', name: 'Power up', riddle: 'The crowd goes wild. Strike the pose.', how: 'Both fists raised high, apart.' },
+  ok: { emoji: '👌', name: 'Chef’s kiss', riddle: 'Perfection, in one hand. Hold it.', how: 'Left hand OK sign, hold it.' },
+  prayer: { emoji: '🙏', name: 'Namaste', riddle: 'Be grateful.', how: 'Palms together in front of you.' },
+  highfive: { emoji: '✋', name: 'High five', riddle: 'Give the camera one.', how: 'Push an open right hand at the camera.' },
+  flip: { emoji: '🙃', name: 'Rude', riddle: 'You wouldn’t.', how: 'One finger. You know which one.' },
+  konami: { emoji: '🕹️', name: 'Arcade', riddle: 'The oldest cheat code still works here. Use the keyboard.', how: 'Up up down down left right left right B A.' },
 };
 
 export const EGG_IDS = Object.keys(EGG_INFO) as EggId[];

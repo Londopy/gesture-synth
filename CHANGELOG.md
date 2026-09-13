@@ -13,6 +13,7 @@ All notable changes to Gesture Synth are documented here. The format follows [Ke
 ### Changed
 
 - Releases are no longer flagged as pre-releases for `v0.x` tags.
+- Help › Secrets no longer spells out each hidden gesture. Unfound secrets show a riddle only; the plain how-to appears after a secret has been found.
 
 ### Fixed
 

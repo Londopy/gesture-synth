@@ -236,8 +236,9 @@ under a dark tint) and **clear camera** (the plain picture, no effects).
 </p>
 
 There are ten hidden gestures. They never change the music, they just make the
-scene do something. **Help › Secrets** keeps score and gives a hint for each one
-you haven't found. The first is the easiest: make a heart with both hands.
+scene do something. **Help › Secrets** keeps score: each unfound secret shows a
+riddle and nothing else, and how it's done is revealed only after you've found
+it. The screenshot above gives away the first one.
 
 ## Medals
 
