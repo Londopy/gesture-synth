@@ -6,6 +6,7 @@
   import { THEMES, visibleThemeNames, getTheme, themeFromFile, themeToFile, type Theme } from '../lib/themes';
   import { downloadFile, pickFile, sanitize, store } from '../lib/storage/store';
   import { CommunityApi } from '../lib/community/api';
+  import { achievements } from '../lib/achievements/store.svelte';
 
   let custom = $state<{ name: string }[]>([]);
   $effect(() => {
@@ -42,6 +43,7 @@
       const sh = await api.share(item.id);
       await navigator.clipboard?.writeText(sh.url).catch(() => {});
       ui.toast(`Published. Link copied: ${sh.url}`, 'ok', 6000);
+      achievements.track({ kind: 'publish' });
     } catch (e: any) {
       ui.toast(e.message, 'error');
     }

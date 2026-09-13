@@ -139,6 +139,12 @@ Clear camera view for framing yourself, then record the scene or the raw camera 
 </td>
 <td valign="top">
 
+### 🏅 Collect
+Forty-eight medals from bronze to platinum for playing, looping, learning and exploring, plus ten secret gestures. Unlocks pop up like osu! medals.
+
+</td>
+<td valign="top">
+
 ### 🌐 Share
 Publish loops, songs, presets and themes to a community service with likes, comments and remix chains. Export `.mid`, `.wav`, `.gsyn.json`. Short links open straight into the app.
 
@@ -218,6 +224,17 @@ under a dark tint) and **clear camera** (the plain picture, no effects).
 There are ten hidden gestures. They never change the music, they just make the
 scene do something. **Help › Secrets** keeps score and gives a hint for each one
 you haven't found. The first is the easiest: make a heart with both hands.
+
+## Medals
+
+<p align="center">
+  <img src="docs/shots/medals.png" alt="Medals page: a grid of tiered medals with progress bars, a detail panel for Scale Walker" width="100%">
+</p>
+
+Forty-eight medals across Playing, Looping, Learning, Exploring, Dedication
+and Hush-Hush, in bronze, silver, gold and platinum. Counters show progress;
+the hush-hush ones show nothing until you have them. Unlocks pop up
+osu!-style with a chime. Everything is tracked on your device only.
 
 ## Download instead of building
 

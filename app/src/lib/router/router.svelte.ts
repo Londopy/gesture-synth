@@ -3,7 +3,7 @@
 //   /instruments  /visuals  /community  /settings  /open?u=gsyn://...
 // Desktop registers gsyn:// for the same paths.
 
-export type Page = 'play' | 'learn' | 'builder' | 'instruments' | 'visuals' | 'community' | 'settings';
+export type Page = 'play' | 'learn' | 'builder' | 'instruments' | 'visuals' | 'community' | 'achievements' | 'settings';
 
 export interface Route {
   page: Page;
@@ -19,6 +19,7 @@ export const PAGES: { id: Page; label: string; path: string; icon: string }[] = 
   { id: 'instruments', label: 'Instruments', path: '/instruments', icon: 'instruments' },
   { id: 'visuals', label: 'Visuals', path: '/visuals', icon: 'visuals' },
   { id: 'community', label: 'Community', path: '/community', icon: 'community' },
+  { id: 'achievements', label: 'Medals', path: '/medals', icon: 'medals' },
   { id: 'settings', label: 'Settings', path: '/settings', icon: 'settings' },
 ];
 
@@ -50,6 +51,9 @@ export function parsePath(pathname: string, search = ''): Route {
       return { page: 'visuals' };
     case 'community':
       return { page: 'community' };
+    case 'medals':
+    case 'achievements':
+      return { page: 'achievements' };
     case 'settings':
       return { page: 'settings' };
     case 's':

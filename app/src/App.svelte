@@ -23,6 +23,9 @@
   import Visuals from './routes/Visuals.svelte';
   import Community from './routes/Community.svelte';
   import Settings from './routes/Settings.svelte';
+  import Achievements from './routes/Achievements.svelte';
+  import AchievementPopup from './lib/ui/AchievementPopup.svelte';
+  import { achievements } from './lib/achievements/store.svelte';
   import { router } from './lib/router/router.svelte';
   import { rt } from './lib/state/engine.svelte';
   import { ui } from './lib/state/ui.svelte';
@@ -62,12 +65,14 @@
       document.documentElement.style.setProperty('--beat', pulse.toFixed(2));
     };
     raf = requestAnimationFrame(tick);
+    achievements.start();
     setKeyHooks({
       save: async () => {
         if (rt.phase !== 'ready') return;
         const json = await rt.sessionJson();
         await store.write(rt.sessionName, 'session', json);
         rt.dirty = false;
+        achievements.track({ kind: 'session_saved' });
         ui.toast(`Saved "${rt.sessionName}"`, 'ok');
       },
       export: () => (ui.exportSheet = !ui.exportSheet),
@@ -131,6 +136,7 @@
         {:else if page === 'instruments'}<Instruments />
         {:else if page === 'visuals'}<Visuals />
         {:else if page === 'community'}<Community />
+        {:else if page === 'achievements'}<Achievements />
         {:else if page === 'settings'}<Settings />{/if}
       </div>
       <Transport />
@@ -145,6 +151,7 @@
   {#if ui.tour && rt.phase === 'ready'}<Tour />{/if}
   {#if ui.exportSheet}<ExportSheet canvas={() => sceneCanvas?.getCanvas() ?? null} />{/if}
   {#if ui.recordSheet && rt.phase === 'ready'}<RecordSheet canvas={() => sceneCanvas?.getCanvas() ?? null} />{/if}
+  {#if rt.phase === 'ready'}<AchievementPopup />{/if}
   <Toasts />
   <ConfirmDialog />
 </div>

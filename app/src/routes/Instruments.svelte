@@ -7,6 +7,7 @@
   import { router } from '../lib/router/router.svelte';
   import { store, downloadFile, pickFile, sanitize } from '../lib/storage/store';
   import { CommunityApi } from '../lib/community/api';
+  import { achievements } from '../lib/achievements/store.svelte';
 
   interface Osc {
     wave: 'saw' | 'sine' | 'triangle' | 'square';
@@ -69,7 +70,10 @@
     timer = window.setTimeout(() => {
       if (!cur) return;
       const inst = $state.snapshot(cur);
-      if (applyTo === 'live') void rt.setLiveInstrument(inst);
+      if (applyTo === 'live') {
+        void rt.setLiveInstrument(inst);
+        achievements.track({ kind: 'instrument', name: inst.name });
+      }
       else if (applyTo === 'theremin') void rt.setThereminInstrument(inst);
       else void rt.setTrackInstrument(applyTo, inst);
     }, 60);
@@ -115,6 +119,7 @@
       const sh = await api.share(item.id);
       await navigator.clipboard?.writeText(sh.url).catch(() => {});
       ui.toast(`Published. Link copied: ${sh.url}`, 'ok', 6000);
+      achievements.track({ kind: 'publish' });
     } catch (e: any) {
       ui.toast(e.message, 'error');
     }

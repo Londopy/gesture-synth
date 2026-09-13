@@ -3,6 +3,7 @@
   import { rt } from '../state/engine.svelte';
   import { ui } from '../state/ui.svelte';
   import { chordName, QUALITY_NAMES, ROMAN, SHAPE_NAMES, type Quality, type Shape } from '../music';
+  import { achievements } from '../achievements/store.svelte';
 
   const p = $derived(ui.chordPopover!);
   const cell = $derived(rt.grid?.cells[p.track]?.[p.step] ?? null);
@@ -22,6 +23,7 @@
 
   async function apply() {
     await rt.replaceChord(p.track, p.step, degree, quality, shape, octave);
+    achievements.track({ kind: 'chord_edit' });
     ui.chordPopover = null;
   }
   function key(e: KeyboardEvent) {

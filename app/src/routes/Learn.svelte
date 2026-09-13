@@ -11,6 +11,7 @@
   import type { LearnTarget } from '../lib/scene/types';
   import { learnState } from './learn-state.svelte';
   import { store, pickFile } from '../lib/storage/store';
+  import { achievements } from '../lib/achievements/store.svelte';
 
   let song = $state<Song | null>(null);
   let targets = $state<TutorialTarget[]>([]);
@@ -69,14 +70,29 @@
     if (!song) return;
     score = newScore();
     judgedFor = new Set();
+    perfectStreak = { cur: 0, best: 0 };
     running = true;
     rt.setBpm(song.bpm * speed);
     rt.play();
   }
   function stop() {
+    if (running && score.total >= targets.length && targets.length > 0) {
+      achievements.track({ kind: 'tutorial', score: scorePercent(score), perfectStreak: perfectStreak.best });
+    }
     running = false;
     rt.stop();
   }
+  // perfect-hit streak for the Flawless medal
+  let perfectStreak = { cur: 0, best: 0 };
+  $effect(() => {
+    const j = score.lastJudgement;
+    const at = score.lastJudgementAt;
+    if (!at) return;
+    if (j === 'perfect') {
+      perfectStreak.cur++;
+      perfectStreak.best = Math.max(perfectStreak.best, perfectStreak.cur);
+    } else if (j) perfectStreak.cur = 0;
+  });
   function setSpeed(v: number) {
     speed = v;
     if (song) rt.setBpm(song.bpm * speed);

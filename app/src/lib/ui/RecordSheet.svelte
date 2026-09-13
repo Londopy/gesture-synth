@@ -7,6 +7,7 @@
   import { settings } from '../state/settings.svelte';
   import { VideoRecorder, saveRecording } from '../export/recorder';
   import { canExportMp4 } from '../platform';
+  import { achievements } from '../achievements/store.svelte';
 
   let { canvas }: { canvas: () => HTMLCanvasElement | null } = $props();
 
@@ -76,6 +77,7 @@
     try {
       await saveRecording(result.blob, settings.s.recFormat, name);
       ui.toast('Recording saved', 'ok');
+      achievements.track({ kind: 'video' });
     } catch (e: any) {
       ui.toast(`Save failed: ${e.message}`, 'error', 6000);
     }

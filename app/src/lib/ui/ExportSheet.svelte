@@ -7,6 +7,7 @@
   import { store, downloadFile, pickFile } from '../storage/store';
   import { canExportMp4, isTauri } from '../platform';
   import { CommunityApi } from '../community/api';
+  import { achievements } from '../achievements/store.svelte';
 
   let { canvas }: { canvas: () => HTMLCanvasElement | null } = $props();
 
@@ -29,6 +30,7 @@
     await store.write(name, 'session', json);
     rt.dirty = false;
     ui.toast(`Saved "${name}"`, 'ok');
+    achievements.track({ kind: 'session_saved' });
     sessions = await store.list('session');
   }
   async function load(n: string) {
@@ -60,6 +62,9 @@
     try {
       await fn();
       ui.toast(`${label} done`, 'ok');
+      if (/export|bounce/i.test(label)) achievements.track({ kind: 'export' });
+      if (/publish/i.test(label)) achievements.track({ kind: 'publish' });
+      if (/video/i.test(label)) achievements.track({ kind: 'video' });
     } catch (e: any) {
       ui.toast(`${label} failed: ${e.message ?? e}`, 'error', 6000);
     } finally {
@@ -112,7 +117,7 @@
         <h3>Session</h3>
         <div class="row wrap">
           <button class="primary" onclick={save}>Save ({isTauri ? 'data folder' : 'browser'})</button>
-          <button onclick={() => exportSession(name)}>Download .gsyn.json</button>
+          <button onclick={() => exportSession(name).then(() => achievements.track({ kind: 'export' }))}>Download .gsyn.json</button>
           <button onclick={importFile}>Import…</button>
         </div>
         {#if sessions.length}

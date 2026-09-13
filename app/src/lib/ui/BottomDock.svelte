@@ -9,6 +9,7 @@
   import { chordName, degreeRoot, hueOf } from '../music';
   import { getTheme } from '../themes';
   import ChordPopover from './ChordPopover.svelte';
+  import { achievements } from '../achievements/store.svelte';
 
   const INSTRUMENTS = ['Pad', 'Keys', 'Organ', 'Pluck', 'Bass', 'Lead', 'Choir'];
   const colors = $derived(getTheme(settings.s.theme).palette.ghost);
@@ -32,6 +33,7 @@
     painting = { value: !cur };
     painted = new Set([`${track}:${step}`]);
     rt.toggleStepMute(track, step);
+    achievements.track({ kind: 'step_mute' });
   }
   function move(track: number, step: number) {
     if (!painting) return;

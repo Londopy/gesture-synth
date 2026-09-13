@@ -12,6 +12,7 @@
   import { store, downloadFile, sanitize } from '../lib/storage/store';
   import { learnState } from './learn-state.svelte';
   import { CommunityApi } from '../lib/community/api';
+  import { achievements } from '../lib/achievements/store.svelte';
 
   let name = $state('My progression');
   let text = $state('I V vi IV');
@@ -71,11 +72,13 @@
     if (!chords.length) return;
     await rt.loadSongIntoTrack(JSON.stringify(song()), track);
     ui.toast(`Dropped into track ${track + 1}`, 'ok');
+    achievements.track({ kind: 'song_built' });
     router.go('play');
   }
   function tutorial() {
     if (!chords.length) return;
     const s = song();
+    achievements.track({ kind: 'song_built' });
     learnState.pending = s;
     router.navigate({ page: 'learn', kind: 'learn', id: s.id! });
   }
@@ -95,6 +98,7 @@
       const sh = await api.share(item.id);
       await navigator.clipboard?.writeText(sh.url).catch(() => {});
       ui.toast(`Published. Link copied: ${sh.url}`, 'ok', 6000);
+      achievements.track({ kind: 'publish' });
     } catch (e: any) {
       ui.toast(e.message, 'error');
     }

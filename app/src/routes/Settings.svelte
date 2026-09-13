@@ -11,6 +11,7 @@
   import { flags } from '../lib/platform';
   import { ACTION_LABELS, comboLabel, comboOf, type Action } from '../lib/keys';
   import Calibration from '../lib/ui/Calibration.svelte';
+  import { achievements } from '../lib/achievements/store.svelte';
 
   let cameras = $state<MediaDeviceInfo[]>([]);
   let audioOuts = $state<{ id: string; name: string }[]>([]);
@@ -185,6 +186,7 @@
         <div class="row wrap">
           <button onclick={() => navigator.clipboard?.writeText(settings.export()).then(() => ui.toast('Settings copied', 'ok'))}>Copy settings JSON</button>
           <button onclick={async () => (await ui.ask('Reset settings', 'Restore all defaults?', 'Reset', true)) && settings.reset()}>Reset all</button>
+          <button onclick={async () => (await ui.ask('Reset medals', 'Clear every medal and all play statistics?', 'Reset', true)) && achievements.reset()}>Reset medals</button>
         </div>
       </section>
     </div>

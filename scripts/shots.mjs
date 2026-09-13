@@ -151,4 +151,21 @@ await page.waitForSelector('[aria-label="Record video"]');
 await ticks(5);
 await shot('recorder');
 
+// 6) medals: play the seven degrees and the four shapes, catch the unlock toast, then the page
+await key('Escape');
+await page.evaluate(() => { localStorage.removeItem('gsyn.achievements.v1'); });
+await page.reload({ waitUntil: 'networkidle0' });
+await page.evaluate(async () => { const rt = window.__gsyn.rt; await rt.start(); await new Promise((r) => setTimeout(r, 500)); });
+const masks = [0b00010, 0b00110, 0b01110, 0b11110, 0b11111, 0b10010, 0b10011];
+for (let i = 0; i < 7; i++) await pose(masks[i], [0b00010, 0b00110, 0b01110, 0b11110][i % 4], 20, 0, 0.3, 6);
+await pose(0b00010, 0b00010, -25, 0, 0.3, 6);
+await new Promise((r) => setTimeout(r, 900));
+await ticks(20);
+await shot('medal-unlock');
+await page.evaluate(() => { history.pushState(null, '', '/medals'); window.dispatchEvent(new PopStateEvent('popstate')); });
+await new Promise((r) => setTimeout(r, 600));
+await page.evaluate(() => [...document.querySelectorAll('.cell')].find((c) => /Scale Walker/.test(c.textContent))?.click());
+await new Promise((r) => setTimeout(r, 400));
+await shot('medals');
+
 await browser.close();
