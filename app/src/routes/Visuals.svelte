@@ -5,7 +5,7 @@
   import { ui } from '../lib/state/ui.svelte';
   import { THEMES, visibleThemeNames, getTheme, themeFromFile, themeToFile, type Theme } from '../lib/themes';
   import { downloadFile, pickFile, sanitize, store } from '../lib/storage/store';
-  import { CommunityApi } from '../lib/community/api';
+  import { communityApi } from '../lib/community/client';
   import { achievements } from '../lib/achievements/store.svelte';
 
   let custom = $state<{ name: string }[]>([]);
@@ -34,18 +34,30 @@
       settings.s.theme = t.name;
     }
   }
+  let publishing = $state(false);
   async function publish() {
+    if (publishing) return;
+    publishing = true;
     try {
-      const api = new CommunityApi(settings.s.communityUrl, settings.s.communityToken);
+      const api = communityApi();
       if (!api.token) throw new Error('Sign in on the Community page first');
+      // Wake the server with the idempotent probe so the create runs once,
+      // against an awake instance, instead of being retried and duplicated.
+      await api.health();
       const t = getTheme(settings.s.theme);
       const item = await api.create({ kind: 'theme', title: t.name, description: '', tags: ['theme'], payload: themeToFile(t) });
       const sh = await api.share(item.id);
-      await navigator.clipboard?.writeText(sh.url).catch(() => {});
-      ui.toast(`Published. Link copied: ${sh.url}`, 'ok', 6000);
+      // After a long wake the click's user activation has expired and the
+      // clipboard write is refused; the link still exists, so show it.
+      const copied = await Promise.resolve()
+        .then(() => navigator.clipboard.writeText(sh.url))
+        .then(() => true, () => false);
+      ui.toast(copied ? `Published. Link copied: ${sh.url}` : `Published. Share link: ${sh.url}`, 'ok', copied ? 6000 : 10000);
       achievements.track({ kind: 'publish' });
     } catch (e: any) {
       ui.toast(e.message, 'error');
+    } finally {
+      publishing = false;
     }
   }
   const t = $derived(getTheme(settings.s.theme));
@@ -73,7 +85,7 @@
         <div class="row wrap">
           <button onclick={exportTheme}>Export theme</button>
           <button onclick={importTheme}>Import theme</button>
-          <button onclick={publish}>Publish</button>
+          <button onclick={publish} disabled={publishing}>{publishing ? 'Publishing…' : 'Publish'}</button>
         </div>
         <div class="swatches">
           <span style:background={t.palette.major} title="major"></span>

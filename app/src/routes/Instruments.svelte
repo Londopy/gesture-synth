@@ -6,7 +6,7 @@
   import { settings } from '../lib/state/settings.svelte';
   import { router } from '../lib/router/router.svelte';
   import { store, downloadFile, pickFile, sanitize } from '../lib/storage/store';
-  import { CommunityApi } from '../lib/community/api';
+  import { communityApi } from '../lib/community/client';
   import { achievements } from '../lib/achievements/store.svelte';
 
   interface Osc {
@@ -54,8 +54,7 @@
   }
   async function openCommunity(id: string) {
     try {
-      const api = new CommunityApi(settings.s.communityUrl, settings.s.communityToken);
-      const item = await api.get(id);
+      const item = await communityApi().get(id);
       if (!item.payload?.osc) throw new Error('not a preset');
       cur = item.payload;
       push();
@@ -110,18 +109,29 @@
       ui.toast('Not a valid instrument file', 'error');
     }
   }
+  let publishing = $state(false);
   async function publish() {
-    if (!cur) return;
+    if (!cur || publishing) return;
+    publishing = true;
     try {
-      const api = new CommunityApi(settings.s.communityUrl, settings.s.communityToken);
+      const api = communityApi();
       if (!api.token) throw new Error('Sign in on the Community page first');
+      // Wake the server with the idempotent probe so the create runs once,
+      // against an awake instance, instead of being retried and duplicated.
+      await api.health();
       const item = await api.create({ kind: 'preset', title: cur.name, description: '', tags: ['preset'], payload: $state.snapshot(cur) });
       const sh = await api.share(item.id);
-      await navigator.clipboard?.writeText(sh.url).catch(() => {});
-      ui.toast(`Published. Link copied: ${sh.url}`, 'ok', 6000);
+      // After a long wake the click's user activation has expired and the
+      // clipboard write is refused; the link still exists, so show it.
+      const copied = await Promise.resolve()
+        .then(() => navigator.clipboard.writeText(sh.url))
+        .then(() => true, () => false);
+      ui.toast(copied ? `Published. Link copied: ${sh.url}` : `Published. Share link: ${sh.url}`, 'ok', copied ? 6000 : 10000);
       achievements.track({ kind: 'publish' });
     } catch (e: any) {
       ui.toast(e.message, 'error');
+    } finally {
+      publishing = false;
     }
   }
   const envPath = $derived.by(() => {
@@ -199,7 +209,7 @@
           <div class="row wrap">
             <button class="primary" onclick={save}>Save as custom</button>
             <button onclick={exportFile}>Export</button>
-            <button onclick={publish}>Publish</button>
+            <button onclick={publish} disabled={publishing}>{publishing ? 'Publishing…' : 'Publish'}</button>
             <span class="small">Play a chord with your hands to hear the edit. Volume: {Math.round(rt.live.volume * 100)}%</span>
           </div>
         </section>

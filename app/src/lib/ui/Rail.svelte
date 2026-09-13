@@ -3,6 +3,7 @@
   // Community, Settings. Collapsible: icons only, labels on hover/expand.
   import { router, PAGES } from '../router/router.svelte';
   import { ui } from '../state/ui.svelte';
+  import { prewarmCommunity } from '../community/client';
   import MadeBy from './MadeBy.svelte';
 
   const icons: Record<string, string> = {
@@ -15,6 +16,19 @@
     medals: 'M8 1.5l2 4 4.4.6-3.2 3.1.8 4.4L8 11.5l-4 2.1.8-4.4L1.6 6.1 6 5.5z',
     settings: 'M8 10.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z M8 1v2M8 13v2M1 8h2M13 8h2M3 3l1.4 1.4M11.6 11.6L13 13M3 13l1.4-1.4M11.6 4.4L13 3',
   };
+
+  // Pre-warm the community server only after the pointer or focus has rested
+  // on its entry: the rail is a vertical list, so reaching Medals or Settings
+  // sweeps past Community, and a sweep is not a request for community content.
+  const WARM_DWELL_MS = 400;
+  let warmTimer: ReturnType<typeof setTimeout> | undefined;
+  function warmSoon() {
+    clearTimeout(warmTimer);
+    warmTimer = setTimeout(prewarmCommunity, WARM_DWELL_MS);
+  }
+  function warmCancel() {
+    clearTimeout(warmTimer);
+  }
 </script>
 
 <nav class="rail glass" class:open={ui.railOpen} aria-label="Pages" onmouseenter={() => (ui.railOpen = true)} onmouseleave={() => (ui.railOpen = false)}>
@@ -27,6 +41,10 @@
       class:active={router.route.page === p.id}
       href={p.path}
       aria-current={router.route.page === p.id ? 'page' : undefined}
+      onmouseenter={p.id === 'community' ? warmSoon : undefined}
+      onmouseleave={p.id === 'community' ? warmCancel : undefined}
+      onfocus={p.id === 'community' ? warmSoon : undefined}
+      onblur={p.id === 'community' ? warmCancel : undefined}
       onclick={(e) => {
         e.preventDefault();
         router.go(p.id);

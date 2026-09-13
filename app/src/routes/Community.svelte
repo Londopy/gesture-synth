@@ -2,17 +2,35 @@
   // Community page (spec 9): browse/download songs, tutorials, presets, themes,
   // loops. Accounts, likes, comments, remix chains, search + tags. Backed by
   // the Gleam service.
-  import { settings } from '../lib/state/settings.svelte';
+  import { untrack } from 'svelte';
+  import { settings, defaultSettings } from '../lib/state/settings.svelte';
   import { ui } from '../lib/state/ui.svelte';
   import { rt } from '../lib/state/engine.svelte';
   import { router } from '../lib/router/router.svelte';
-  import { CommunityApi, type Item, type ItemKind, type Comment, type User } from '../lib/community/api';
+  import { ApiError, CommunityApi, type Item, type ItemKind, type Comment, type User } from '../lib/community/api';
+  import { communityApi } from '../lib/community/client';
   import { THEMES, themeFromFile } from '../lib/themes';
   import { learnState } from './learn-state.svelte';
 
-  const api = $derived(new CommunityApi(settings.s.communityUrl, settings.s.communityToken));
+  // Reachability is owned by the latest refresh() alone: it builds its own
+  // client whose waking callback checks it is still the newest list request,
+  // so a superseded attempt or any other call on the page can never leave the
+  // banner up. 'waking' means the list is waiting on a hosted server that is
+  // probably spinning up; 'down' and 'local-down' mean it gave up. A 4xx/500
+  // never changes it: the server answered, so it is up.
+  type Link = 'unknown' | 'ok' | 'waking' | 'down' | 'local-down';
+  const local = $derived(CommunityApi.isLocalUrl(settings.s.communityUrl));
+  // Shared client for everything but the list; its waits are announced by the
+  // default throttled toast because the page banner belongs to refresh().
+  const api = $derived(communityApi());
+  // The setup hint only helps someone running the app from source; a hosted
+  // visitor whose browser kept an old localhost URL needs a way back instead.
+  const devApp = import.meta.env.DEV;
+  // Switching back re-runs the list through the URL effect below.
+  const defaultUrl = defaultSettings().communityUrl;
   let me = $state<User | null>(null);
-  let online = $state<boolean | null>(null);
+  let link = $state<Link>('unknown');
+  let wakeSecs = $state(0);
   let kind = $state<ItemKind | ''>('');
   let q = $state('');
   let tag = $state('');
@@ -30,12 +48,24 @@
   let showAuth = $state(false);
 
   $effect(() => {
-    void refresh();
-    api
-      .health()
-      .then(() => (online = true))
-      .catch(() => (online = false));
-    if (settings.s.communityToken) api.me().then((u) => (me = u)).catch(() => (me = null));
+    // Re-run only when the URL or token changes; the filters are applied by
+    // their own handlers, otherwise every keystroke in Search refires the list.
+    api;
+    untrack(() => {
+      // me() runs after the list, and only once the list has proven the
+      // server awake; against a server that just failed to answer for 75 s it
+      // would only start a second wait of its own.
+      void refresh().then(() => {
+        if (settings.s.communityToken && link === 'ok') api.me().then((u) => (me = u)).catch(() => (me = null));
+      });
+    });
+  });
+
+  // Elapsed counter for the waking notice; the retry callback re-syncs it.
+  $effect(() => {
+    if (link !== 'waking') return;
+    const id = setInterval(() => wakeSecs++, 1000);
+    return () => clearInterval(id);
   });
 
   $effect(() => {
@@ -46,16 +76,33 @@
     }
   });
 
+  // During a wake an early slow response can land after a newer one; only the
+  // latest request may write.
+  let refreshSeq = 0;
   async function refresh() {
+    const my = ++refreshSeq;
+    const list = communityApi((_attempt, elapsedMs) => {
+      if (local || my !== refreshSeq) return;
+      link = 'waking';
+      wakeSecs = Math.round(elapsedMs / 1000);
+    });
     busy = true;
     try {
-      const r = await api.list({ kind: kind || undefined, q, tag, sort, page, per_page: 24 });
+      const r = await list.list({ kind: kind || undefined, q, tag, sort, page, per_page: 24 });
+      if (my !== refreshSeq) return;
       items = r.items;
       total = r.total;
+      link = 'ok';
     } catch (e: any) {
-      online = false;
+      if (my !== refreshSeq) return;
+      if (e instanceof ApiError && !e.offline) {
+        link = 'ok';
+        ui.toast(`Couldn't load the list: ${e.message}`, 'error');
+      } else {
+        link = local ? 'local-down' : 'down';
+      }
     } finally {
-      busy = false;
+      if (my === refreshSeq) busy = false;
     }
   }
   async function open(it: Item) {
@@ -84,6 +131,9 @@
     if (!detail || !newComment.trim()) return;
     if (!me) return (showAuth = true);
     try {
+      // Same warm-up as the publish flows: the server may have gone to sleep
+      // while the page sat open, and a retried comment body would post twice.
+      await api.health();
       const c = await api.comment(detail.id, newComment.trim());
       comments = [...comments, c];
       newComment = '';
@@ -149,16 +199,26 @@
     return remixParent;
   }
   async function share(it: Item) {
+    let s: { url: string };
     try {
-      const s = await api.share(it.id);
-      await navigator.clipboard?.writeText(s.url);
-      ui.toast(`Link copied: ${s.url}`, 'ok');
+      s = await api.share(it.id);
     } catch (e: any) {
-      ui.toast(e.message, 'error');
+      return ui.toast(e.message, 'error');
+    }
+    // After a long wait the click's user activation has expired and the
+    // clipboard write is refused; the link still exists, so show it.
+    try {
+      await navigator.clipboard.writeText(s.url);
+      ui.toast(`Link copied: ${s.url}`, 'ok', 6000);
+    } catch {
+      ui.toast(`Share link: ${s.url}`, 'info', 8000);
     }
   }
+  let authBusy = $state(false);
   async function submitAuth() {
+    if (authBusy) return;
     auth.error = '';
+    authBusy = true;
     try {
       const r = auth.mode === 'login' ? await api.login(auth.handle, auth.password) : await api.register(auth.handle, auth.name || auth.handle, auth.password);
       settings.s.communityToken = r.token;
@@ -168,18 +228,26 @@
       auth.password = '';
     } catch (e: any) {
       auth.error = e.message;
+    } finally {
+      authBusy = false;
     }
   }
   async function logout() {
-    await api.logout().catch(() => {});
+    // Forget the token locally first so the header does not stay signed in for
+    // the whole wake of a sleeping server; revoking it server-side is best effort.
+    const stale = api;
     settings.s.communityToken = '';
     me = null;
+    await stale.logout().catch(() => {});
   }
   async function remove(it: Item) {
-    if (await ui.ask('Delete', `Delete "${it.title}"?`, 'Delete', true)) {
+    if (!(await ui.ask('Delete', `Delete "${it.title}"?`, 'Delete', true))) return;
+    try {
       await api.remove(it.id);
       detail = null;
       await refresh();
+    } catch (e: any) {
+      ui.toast(`Could not delete: ${e.message}`, 'error');
     }
   }
   const KINDS: { v: ItemKind | ''; l: string }[] = [
@@ -201,14 +269,33 @@
           <span class="small">@{me.handle}</span>
           <button onclick={logout}>Sign out</button>
         {:else}
-          <button class="primary" onclick={() => (showAuth = true)} disabled={online === false}>Sign in</button>
+          <button class="primary" onclick={() => (showAuth = true)} disabled={link === 'down' || link === 'local-down'}>Sign in</button>
         {/if}
       </div>
     </div>
-    {#if online === false}
-      <div class="glass card offline">
-        Community service not reachable at <code>{settings.s.communityUrl}</code>. Start it with <code>cd services/community &amp;&amp; gleam run</code> or set the URL in Settings.
-        <button onclick={refresh} style="margin-left:10px">Retry</button>
+    {#if link === 'waking'}
+      <div class="glass card notice waking" role="status">
+        <span class="spinner" aria-hidden="true"></span>
+        <span>Waking up the community server. It sleeps when nobody's around and takes up to a minute to come back — retrying automatically <span class="num">({wakeSecs} s)</span>.</span>
+      </div>
+    {:else if link === 'down'}
+      <div class="glass card notice offline" role="status">
+        <span>The community server isn't answering right now. Check your connection or try again in a minute — everything you've made is safe on this device.</span>
+        <button onclick={refresh}>Try again</button>
+      </div>
+    {:else if link === 'local-down' && devApp}
+      <div class="glass card notice offline" role="status">
+        <span>No community server at <code>{settings.s.communityUrl}</code>. Start one with <code>cd services/community &amp;&amp; gleam run</code>, or point the app at another server in Settings.</span>
+        <button onclick={refresh}>Retry</button>
+      </div>
+    {:else if link === 'local-down'}
+      <div class="glass card notice offline" role="status">
+        <span>No community server is answering at <code>{settings.s.communityUrl}</code>. Everything you've made is safe on this device.</span>
+        {#if settings.s.communityUrl !== defaultUrl}
+          <button onclick={() => (settings.s.communityUrl = defaultUrl)}>Use the default server</button>
+        {:else}
+          <button onclick={refresh}>Try again</button>
+        {/if}
       </div>
     {/if}
     <div class="row wrap filters">
@@ -230,7 +317,8 @@
             <span class="meta num">♥ {it.like_count} · 💬 {it.comment_count}{it.parent_id ? ' · remix' : ''}</span>
           </button>
         {/each}
-        {#if !items.length && !busy && online}<p>Nothing here yet. Publish a loop from the export sheet (Ctrl/Cmd+E).</p>{/if}
+        {#if !items.length && busy && link !== 'waking'}<p class="small">Loading…</p>{/if}
+        {#if !items.length && !busy && link === 'ok'}<p>Nothing here yet. Publish a loop from the export sheet (Ctrl/Cmd+E).</p>{/if}
       </div>
       {#if detail}
         <aside class="detail glass card col">
@@ -283,15 +371,46 @@
       {#if auth.mode === 'register'}<label class="col"><span class="label">Display name</span><input type="text" bind:value={auth.name} /></label>{/if}
       <label class="col"><span class="label">Password</span><input type="password" bind:value={auth.password} autocomplete={auth.mode === 'login' ? 'current-password' : 'new-password'} required minlength="8" /></label>
       {#if auth.error}<p class="err">{auth.error}</p>{/if}
-      <div class="row" style="justify-content:flex-end"><button type="button" onclick={() => (showAuth = false)}>Cancel</button><button class="primary" type="submit">{auth.mode === 'login' ? 'Sign in' : 'Create'}</button></div>
+      <div class="row" style="justify-content:flex-end"><button type="button" onclick={() => (showAuth = false)}>Cancel</button><button class="primary" type="submit" disabled={authBusy}>{authBusy ? 'Connecting…' : auth.mode === 'login' ? 'Sign in' : 'Create'}</button></div>
     </form>
   </div>
 {/if}
 
 <style>
-  .offline {
+  .notice {
+    display: flex;
+    align-items: center;
+    gap: 10px;
     font-size: 13px;
+  }
+  .notice button {
+    margin-left: auto;
+    flex-shrink: 0;
+  }
+  .offline {
     color: var(--warn);
+  }
+  .waking {
+    color: var(--text-dim);
+  }
+  .spinner {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    border: 2px solid var(--line);
+    border-top-color: var(--accent);
+    animation: spin 0.9s linear infinite;
+  }
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .spinner {
+      animation: none;
+    }
   }
   code {
     background: rgba(255, 255, 255, 0.06);

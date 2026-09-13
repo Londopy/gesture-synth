@@ -33,7 +33,7 @@ Every deploy is a plain SPA: `/`, `/loop/<id>`, `/song/<id>`, `/learn/<id>`,
 
 The Gleam service runs from `services/community/Dockerfile`.
 
-- **Render** (free web service): `render.yaml` at the repo root creates it. Free instances spin down after 15 minutes idle and take ~30 s to wake; the in-memory store loses everything on restart, so add `DATABASE_URL`.
+- **Render** (free web service): `render.yaml` at the repo root creates it. Free instances spin down after 15 minutes idle and take up to a minute to wake (the app shows a waking notice and retries); the in-memory store loses everything on restart, so add `DATABASE_URL`.
 - **Fly.io** (free allowance): `fly launch --dockerfile services/community/Dockerfile`, then `fly secrets set SECRET_KEY_BASE=... DATABASE_URL=...`.
 - **Koyeb / Railway** also take the Dockerfile directly.
 

@@ -6,7 +6,7 @@
   import { exportMidi, exportSession, exportVideo, exportWav, recordShareClip } from '../export/video';
   import { store, downloadFile, pickFile } from '../storage/store';
   import { canExportMp4, isTauri } from '../platform';
-  import { CommunityApi } from '../community/api';
+  import { communityApi } from '../community/client';
   import { achievements } from '../achievements/store.svelte';
 
   let { canvas }: { canvas: () => HTMLCanvasElement | null } = $props();
@@ -91,15 +91,29 @@
       }
     });
   }
+  let shareCopied = $state(false);
   async function publish() {
     await run('Publish loop', async () => {
-      const api = new CommunityApi(settings.s.communityUrl, settings.s.communityToken);
+      // The sheet already shows a busy label, so retries update it instead of toasting.
+      const api = communityApi(() => (busy = 'Waking up the community server, up to a minute'));
       if (!api.token) throw new Error('Sign in on the Community page first');
+      // Wake the server with the idempotent probe so the create runs once,
+      // against an awake instance, instead of being retried and duplicated.
+      await api.health();
+      busy = 'Publish loop';
       const json = await rt.sessionJson();
       const item = await api.create({ kind: 'loop', title: name, description: '', tags: ['loop'], payload: JSON.parse(json) });
       const s = await api.share(item.id);
       shareUrl = s.url;
-      await navigator.clipboard?.writeText(s.url).catch(() => {});
+      // After a long wake the click's user activation has expired and the
+      // clipboard write is refused, and over plain http there is no clipboard
+      // at all; the loop is published either way, so say which happened.
+      try {
+        await navigator.clipboard.writeText(s.url);
+        shareCopied = true;
+      } catch {
+        shareCopied = false;
+      }
     });
   }
 </script>
@@ -155,7 +169,7 @@
           <button onclick={shareClip} disabled={!!busy}>15 s clip</button>
           <button onclick={publish} disabled={!!busy}>Publish loop to Community</button>
         </div>
-        {#if shareUrl}<p class="hint">Link copied: <a href={shareUrl} target="_blank" rel="noopener">{shareUrl}</a></p>{/if}
+        {#if shareUrl}<p class="hint">{shareCopied ? 'Link copied:' : 'Share link:'} <a href={shareUrl} target="_blank" rel="noopener">{shareUrl}</a></p>{/if}
         {#if clipUrl}<video class="clip" src={clipUrl} controls muted></video>{/if}
       </section>
     </div>

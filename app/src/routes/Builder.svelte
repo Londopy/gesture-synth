@@ -11,7 +11,7 @@
   import { QUALITY_KEYS, SHAPE_KEYS, type Song, type SongChord } from '../lib/learn/songs';
   import { store, downloadFile, sanitize } from '../lib/storage/store';
   import { learnState } from './learn-state.svelte';
-  import { CommunityApi } from '../lib/community/api';
+  import { communityApi } from '../lib/community/client';
   import { achievements } from '../lib/achievements/store.svelte';
 
   let name = $state('My progression');
@@ -89,18 +89,30 @@
   async function exportFile() {
     await downloadFile(sanitize(name) + '.song.gsyn.json', JSON.stringify(song(), null, 2) + '\n', 'application/json');
   }
+  let publishing = $state(false);
   async function publish() {
+    if (publishing) return;
+    publishing = true;
     try {
-      const api = new CommunityApi(settings.s.communityUrl, settings.s.communityToken);
+      const api = communityApi();
       if (!api.token) throw new Error('Sign in on the Community page first');
+      // Wake the server with the idempotent probe so the create runs once,
+      // against an awake instance, instead of being retried and duplicated.
+      await api.health();
       const s = song();
       const item = await api.create({ kind: 'song', title: s.name, description: text, tags: s.tags, payload: s });
       const sh = await api.share(item.id);
-      await navigator.clipboard?.writeText(sh.url).catch(() => {});
-      ui.toast(`Published. Link copied: ${sh.url}`, 'ok', 6000);
+      // After a long wake the click's user activation has expired and the
+      // clipboard write is refused; the link still exists, so show it.
+      const copied = await Promise.resolve()
+        .then(() => navigator.clipboard.writeText(sh.url))
+        .then(() => true, () => false);
+      ui.toast(copied ? `Published. Link copied: ${sh.url}` : `Published. Share link: ${sh.url}`, 'ok', copied ? 6000 : 10000);
       achievements.track({ kind: 'publish' });
     } catch (e: any) {
       ui.toast(e.message, 'error');
+    } finally {
+      publishing = false;
     }
   }
 
@@ -111,8 +123,7 @@
   });
   async function openCommunitySong(id: string) {
     try {
-      const api = new CommunityApi(settings.s.communityUrl, settings.s.communityToken);
-      const item = await api.get(id);
+      const item = await communityApi().get(id);
       const s = item.payload as Song;
       if (!s?.chords) throw new Error('not a song');
       name = s.name;
@@ -187,7 +198,7 @@
           </div>
           <button onclick={save} disabled={!chords.length}>Save</button>
           <button onclick={exportFile} disabled={!chords.length}>Export .song.gsyn.json</button>
-          <button onclick={publish} disabled={!chords.length}>Publish</button>
+          <button onclick={publish} disabled={!chords.length || publishing}>{publishing ? 'Publishing…' : 'Publish'}</button>
         </div>
       </section>
     </div>

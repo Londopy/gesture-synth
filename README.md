@@ -163,7 +163,8 @@ Publish loops, songs, presets and themes to a community service with likes, comm
 
 No install: open **[gesture-synth.onrender.com](https://gesture-synth.onrender.com)** in Chrome, Edge or
 Firefox, click **Start**, allow the camera. (The Community page's server sleeps when idle on the
-free tier and takes about 30 s to wake; playing does not depend on it.)
+free tier and can take up to a minute to wake; the page says so and retries on its own. Playing
+does not depend on it.)
 
 From source:
 
