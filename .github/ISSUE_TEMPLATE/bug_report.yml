@@ -6,7 +6,7 @@ body:
     id: platform
     attributes:
       label: Where
-      options: [Web (Chrome/Edge), Web (Firefox), Web (Safari), Desktop Windows, Desktop macOS, Desktop Linux, Community service]
+      options: [Web (Chrome/Edge), Web (Firefox), Web (Safari), Desktop Windows, Desktop macOS (self-built), Desktop Linux, Community service]
     validations:
       required: true
   - type: textarea

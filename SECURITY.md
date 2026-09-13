@@ -30,7 +30,8 @@ for confirmed issues. Credit is given in the changelog unless you prefer not.
 
 ## What the app does with your data
 
-- Camera frames are processed locally by MediaPipe in the page or webview. No video or landmarks leave the device unless you explicitly publish a loop, which includes 15 Hz hand landmarks for ghost playback.
+- Camera frames are processed locally by MediaPipe in the page or webview. The clear camera view shows the raw picture on your screen only.
+- The microphone is opened only while you record with the mic option on, and the stream is closed when the recording stops. Recordings are saved where you choose; nothing is uploaded. No video or landmarks leave the device unless you explicitly publish a loop, which includes 15 Hz hand landmarks for ghost playback.
 - Audio is synthesized locally. Nothing is uploaded unless you use Share or Publish.
 - Telemetry is off by default and this build sends none.
 - The community service stores handles, display names, PBKDF2 password hashes, hashed session tokens and the items you publish. Passwords and raw tokens are never stored.

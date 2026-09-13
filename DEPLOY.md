@@ -46,6 +46,18 @@ redirect), `CORS_ORIGIN` (set it to the app origin, not `*`, in production),
 ## Desktop installers
 
 Pushing a tag `vX.Y.Z` runs `.github/workflows/release.yml`, which builds
-Windows (`.msi`, `.exe`), macOS (`.dmg`, universal) and Linux (`.deb`,
-`.AppImage`) bundles with Tauri and attaches them to a draft GitHub Release,
-plus a zip of the web build. GitHub Actions is free for public repositories.
+Windows (`.msi`, setup `.exe`) and Linux (`.deb`, `.AppImage`) bundles with
+Tauri, a zip of the web build with a local server, `SHA256SUMS.txt`, and
+release notes rendered from `CHANGELOG.md`, then publishes the GitHub Release.
+GitHub Actions is free for public repositories. Every job has a
+`timeout-minutes` so a stuck runner cannot burn the monthly quota.
+
+macOS is deliberately not built in CI: hosted macOS runners have hung without
+finishing. Build it on a Mac instead and attach the `.dmg` to the release by
+hand:
+
+```bash
+xcode-select --install
+npm install && npm run models && npm run tauri:build      # src-tauri/target/release/bundle/dmg/
+shasum -a 256 src-tauri/target/release/bundle/dmg/*.dmg   # append to SHA256SUMS.txt
+```

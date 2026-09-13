@@ -9,7 +9,6 @@
 | File | What it is |
 | --- | --- |
 | `Gesture.Synth_*_x64-setup.exe` / `Gesture.Synth_*_x64_en-US.msi` | Windows installer (WebView2, 64-bit) |
-| `Gesture.Synth_*_universal.dmg` | macOS app (Intel + Apple Silicon) |
 | `Gesture.Synth_*_amd64.AppImage` / `.deb` | Linux |
 | `gesture-synth-web-{{TAG}}.zip` | The website, to run on your own computer at `http://localhost:4173` |
 | `SHA256SUMS.txt` | Checksums for every file above |
@@ -24,12 +23,15 @@
 
 ### macOS
 
-1. Download the `.dmg`, open it, drag **Gesture Synth** to Applications.
-2. The app is not notarized. On first launch, right-click the app and choose **Open**, or run:
-   ```bash
-   xattr -cr "/Applications/Gesture Synth.app"
-   ```
-3. Grant camera access in the prompt (System Settings › Privacy & Security › Camera if you dismissed it).
+There is no prebuilt Mac app (hosted macOS build machines were unreliable). Two options:
+
+- Use the website zip below; it runs the same instrument in Safari, Chrome or Firefox.
+- Build the app yourself in about ten minutes: install [Rust](https://rustup.rs), [Node](https://nodejs.org) and Xcode command line tools (`xcode-select --install`), then
+  ```bash
+  git clone https://github.com/{{REPO}}.git && cd gesture-synth
+  npm install && npm run models && npm run tauri:build
+  ```
+  The `.app` and `.dmg` land in `src-tauri/target/release/bundle/`. Grant camera access on first launch.
 
 ### Linux
 

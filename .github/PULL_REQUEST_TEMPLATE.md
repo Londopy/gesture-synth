@@ -11,6 +11,7 @@
 - [ ] `cd crates/gsyn-zig && zig build test` (if the kernel changed)
 - [ ] `cd services/community && gleam test` (if the service changed)
 - [ ] Tried it with a real camera / in the desktop app (if user-facing)
+- [ ] Checked the clear camera view and a short recording still work (if the scene, audio graph or settings changed)
 
 ## Checklist
 

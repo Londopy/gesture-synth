@@ -71,6 +71,8 @@ real parser, worklet engine and scene without a webcam.
 - **A gesture or control scheme**: `crates/gsyn-core/src/gesture.rs` + a test with `synth_hand`, then the cheat sheet in `app/src/lib/ui/HelpOverlay.svelte` and, if it changes the tour, `app/src/lib/tour/steps.ts`.
 - **An instrument preset**: `crates/gsyn-core/src/instruments.rs` (`BUILTIN_NAMES` + a constructor) and the `INSTRUMENTS` lists in the UI.
 - **A visual theme**: `app/src/lib/themes.ts`.
+- **A view mode or scene layer**: `app/src/lib/scene/scene.ts` (`setView`) and the `Layer` interface in `scene/types.ts`; keep clear-camera mode effect-free.
+- **Recording sources**: `app/src/lib/export/recorder.ts` (MediaRecorder) and `RecordSheet.svelte`; audio always comes from the worklet record mix so the metronome stays out.
 - **A file format field**: add it with `#[serde(default)]` so old files still load, bump `FORMAT_VERSION` only for breaking changes, and add a round-trip test in `session.rs`.
 - **A community endpoint**: `services/community/src/community/router.gleam` + handler module + `test/community_test.gleam` + the `CommunityApi` client in `app/src/lib/community/api.ts`.
 
@@ -86,8 +88,16 @@ real parser, worklet engine and scene without a webcam.
 ```bash
 patchnotes CHANGELOG.md bump 0.2.0    # moves Unreleased into a dated release
 # bump "version" in Cargo.toml (workspace), package.json, app/package.json, src-tauri/tauri.conf.json
-git tag v0.2.0 && git push --tags     # the release workflow builds desktop bundles
+git commit -am "Release 0.2.0"
+git tag v0.2.0 && git push && git push --tags
 ```
+
+The tag triggers `.github/workflows/release.yml`: Windows and Linux installers,
+the web zip with `serve.mjs`, `SHA256SUMS.txt`, and notes rendered from the
+changelog with `scripts/release-notes.mjs` (preview them locally with
+`npm run release:notes -- v0.2.0 owner/repo`). macOS is not built in CI;
+see [DEPLOY.md](DEPLOY.md) for the local build. Every workflow job has a
+`timeout-minutes`; keep it that way when adding jobs.
 
 ## License
 

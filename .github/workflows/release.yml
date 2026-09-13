@@ -1,7 +1,8 @@
 name: Release
 
 # Push a tag like v0.2.0 (after `patchnotes CHANGELOG.md bump 0.2.0`):
-#   1. desktop: Tauri bundles for Windows (.msi + setup.exe), macOS (.dmg), Linux (.AppImage + .deb)
+#   1. desktop: Tauri bundles for Windows (.msi + setup.exe) and Linux (.AppImage + .deb).
+#      macOS is built locally (see DEPLOY.md): hosted macOS runners have hung indefinitely for this project.
 #   2. web: zip of the built site with serve.mjs for running on localhost
 #   3. finalize: SHA256SUMS.txt, release notes from CHANGELOG.md (patchnotes) + install tutorial, publish
 
@@ -25,18 +26,16 @@ jobs:
           - name: windows
             os: windows-latest
             args: ""
-          - name: macos
-            os: macos-latest
-            args: "--target universal-apple-darwin"
           - name: linux
             os: ubuntu-22.04
             args: ""
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
         with:
-          targets: wasm32-unknown-unknown${{ matrix.name == 'macos' && ',aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+          targets: wasm32-unknown-unknown
       - uses: Swatinem/rust-cache@v2
       - uses: actions/setup-node@v4
         with:
@@ -47,9 +46,6 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libasound2-dev ffmpeg
-      - name: ffmpeg (macOS)
-        if: matrix.name == 'macos'
-        run: brew install ffmpeg
       - name: ffmpeg (Windows)
         if: matrix.name == 'windows'
         run: choco install ffmpeg -y --no-progress
@@ -73,6 +69,7 @@ jobs:
   web:
     name: Web bundle
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
@@ -119,6 +116,7 @@ jobs:
     name: Checksums, notes, publish
     needs: [desktop, web]
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

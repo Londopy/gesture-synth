@@ -10,11 +10,12 @@ Versions follow [Semantic Versioning](https://semver.org/).
 ### Added
 - Clear camera view: the plain, untinted camera picture with every effect off, with an optional hand wireframe overlay. Three view modes now cycle with `C` (performance, practice, clear camera) and are selectable in the top-right menu, Visuals and Settings.
 - Video recorder (`Ctrl/Cmd+Shift+R` or the camera button): records the scene or the raw camera feed with the instrument mix (metronome excluded) and an optional microphone (device picker, gain, level meter) for singing or talking over a loop. Start/stop with a timer, preview, save as webm or mp4.
-- Release pipeline: pushing a `v*` tag builds Windows (.msi, setup .exe), macOS (.dmg) and Linux (.AppImage, .deb) installers, a zip of the website with a zero-dependency local server (`node serve.mjs` on http://localhost:4173), `SHA256SUMS.txt`, and release notes generated from this changelog with patchnotes plus an install tutorial.
+- Release pipeline: pushing a `v*` tag builds Windows (.msi, setup .exe) and Linux (.AppImage, .deb) installers, a zip of the website with a zero-dependency local server (`node serve.mjs` on http://localhost:4173), `SHA256SUMS.txt`, and release notes generated from this changelog with patchnotes plus an install tutorial.
 - `scripts/serve.mjs` and `npm run serve` to run the built site locally with the cross-origin isolation headers.
 
 ### Changed
 - The camera feed setting became the view mode setting; a saved "camera feed on" preference migrates to the practice view.
+- CI and the release workflow no longer use hosted macOS runners (they hung without finishing); every job now has a timeout. macOS builds are documented as a local build in DEPLOY.md.
 
 ## [0.1.0] - 2026-09-12
 

@@ -128,7 +128,8 @@ so instruments can change after recording and files stay tiny.
 ## Download instead of building
 
 Every [release](https://github.com/Londopy/gesture-synth/releases) has Windows
-(.msi), macOS (.dmg) and Linux (.AppImage, .deb) installers, a zip of the
+(.msi) and Linux (.AppImage, .deb) installers (macOS: build from source, see
+[DEPLOY.md](DEPLOY.md)), a zip of the
 website you can run on your own computer with one command (`node serve.mjs`,
 then open http://localhost:4173), `SHA256SUMS.txt` to verify downloads, and an
 install tutorial in the release notes. The notes are generated from

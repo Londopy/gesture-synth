@@ -30,3 +30,17 @@ Thumbs.db
 !.vscode/extensions.json
 *.swp
 /tmp/
+
+# recordings and exports made while testing
+*.webm
+*.mp4
+*.wav
+*.mid
+!content/**
+# release workflow scratch
+/assets/
+/dist-web/
+/notes.md
+/gesture-synth-web-*/
+/gesture-synth-web-*.zip
+*.pdb
