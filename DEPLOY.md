@@ -52,9 +52,13 @@ release notes rendered from `CHANGELOG.md`, then publishes the GitHub Release.
 GitHub Actions is free for public repositories. Every job has a
 `timeout-minutes` so a stuck runner cannot burn the monthly quota.
 
-macOS is deliberately not built in CI: hosted macOS runners have hung without
-finishing. Build it on a Mac instead and attach the `.dmg` to the release by
-hand:
+macOS is not part of the automatic release: hosted macOS runners have hung
+without finishing for this project. There is an opt-in workflow instead,
+**Actions › macOS build (opt-in) › Run workflow**: enter the release tag, tick
+"intel" if you also want an x86_64 build. It uses an Apple Silicon runner,
+builds arm64 only (no universal lipo), pulls ffmpeg from `ffmpeg-static`
+instead of Homebrew, has a 45-minute timeout, and attaches the `.dmg` plus
+its checksum to the release. If it still hangs, build on a Mac:
 
 ```bash
 xcode-select --install

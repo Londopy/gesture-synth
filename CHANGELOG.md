@@ -15,7 +15,8 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ### Changed
 - The camera feed setting became the view mode setting; a saved "camera feed on" preference migrates to the practice view.
-- CI and the release workflow no longer use hosted macOS runners (they hung without finishing); every job now has a timeout. macOS builds are documented as a local build in DEPLOY.md.
+- CI and the release workflow no longer use hosted macOS runners (they hung without finishing); every job now has a timeout. macOS is an opt-in workflow (Apple Silicon runner, arm64 only, no Homebrew, 45 min timeout) that attaches a `.dmg` to an existing release; see DEPLOY.md.
+- `scripts/fetch-ffmpeg.mjs --static` falls back to the `ffmpeg-static` package when ffmpeg is not on PATH, so release builds never run without the sidecar.
 
 ## [0.1.0] - 2026-09-12
 

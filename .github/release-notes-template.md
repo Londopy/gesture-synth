@@ -26,7 +26,8 @@
 There is no prebuilt Mac app (hosted macOS build machines were unreliable). Two options:
 
 - Use the website zip below; it runs the same instrument in Safari, Chrome or Firefox.
-- Build the app yourself in about ten minutes: install [Rust](https://rustup.rs), [Node](https://nodejs.org) and Xcode command line tools (`xcode-select --install`), then
+- If a `_aarch64.dmg` is attached to this release, use it (Apple Silicon only): open it, drag **Gesture Synth** to Applications, then right-click › **Open** the first time (the app is not notarized) or run `xattr -cr "/Applications/Gesture Synth.app"`.
+- Otherwise build the app yourself in about ten minutes: install [Rust](https://rustup.rs), [Node](https://nodejs.org) and Xcode command line tools (`xcode-select --install`), then
   ```bash
   git clone https://github.com/{{REPO}}.git && cd gesture-synth
   npm install && npm run models && npm run tauri:build

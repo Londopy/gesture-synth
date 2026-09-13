@@ -52,8 +52,7 @@ jobs:
       - run: npm ci --ignore-scripts
       - run: node scripts/fetch-models.mjs
       - name: ffmpeg sidecar
-        run: node scripts/fetch-ffmpeg.mjs
-        continue-on-error: true
+        run: node scripts/fetch-ffmpeg.mjs --static
       - name: Build bundles
         uses: tauri-apps/tauri-action@v0
         env:

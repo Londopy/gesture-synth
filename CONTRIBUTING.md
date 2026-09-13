@@ -96,7 +96,7 @@ The tag triggers `.github/workflows/release.yml`: Windows and Linux installers,
 the web zip with `serve.mjs`, `SHA256SUMS.txt`, and notes rendered from the
 changelog with `scripts/release-notes.mjs` (preview them locally with
 `npm run release:notes -- v0.2.0 owner/repo`). macOS is not built in CI;
-see [DEPLOY.md](DEPLOY.md) for the local build. Every workflow job has a
+see [DEPLOY.md](DEPLOY.md) for the opt-in macOS workflow and the local build. Every workflow job has a
 `timeout-minutes`; keep it that way when adding jobs.
 
 ## License
