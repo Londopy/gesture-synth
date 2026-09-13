@@ -1,6 +1,8 @@
 //// Postgres `Store` implementation built on `pog`.
 ////
-//// Schema: see `sql/schema.sql`. Used when `DATABASE_URL` is set. This module
+//// Schema: see `sql/schema.sql`, which is applied at startup when the file is
+//// present next to the running service (every statement is `IF NOT EXISTS`, so
+//// this is safe to repeat). Used when `DATABASE_URL` is set. This module
 //// compiles without a database; it is only exercised at runtime.
 
 import community/store.{
@@ -11,11 +13,14 @@ import community/store.{
 import gleam/dynamic/decode
 import gleam/erlang/process
 import gleam/int
+import gleam/io
 import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/result
 import gleam/string
+import gleam/uri
 import pog
+import simplifile
 
 // ---------------------------------------------------------------------------
 // Startup
@@ -25,7 +30,7 @@ import pog
 pub fn new(database_url: String) -> Result(Store, String) {
   let name = process.new_name("community_postgres")
   use config <- result.try(
-    pog.url_config(name, database_url)
+    pog.url_config(name, normalise_url(database_url))
     |> result.replace_error(
       "DATABASE_URL is not a valid postgres:// connection URL",
     ),
@@ -38,7 +43,106 @@ pub fn new(database_url: String) -> Result(Store, String) {
       "could not start postgres pool: " <> string.inspect(error)
     }),
   )
-  Ok(store_for(started.data))
+  let db = started.data
+  use _ <- result.try(wait_until_connected(db, 20))
+  apply_schema(db)
+  Ok(store_for(db))
+}
+
+/// Make hosted-Postgres connection strings work as pasted. `pog.url_config`
+/// insists on an explicit port and only enables TLS when `sslmode` is in the
+/// URL; Neon, Supabase and Render omit the port and require TLS.
+pub fn normalise_url(database_url: String) -> String {
+  case uri.parse(database_url) {
+    Error(_) -> database_url
+    Ok(parsed) -> {
+      let port = option.or(parsed.port, Some(5432))
+      let local = case parsed.host {
+        Some("localhost") | Some("127.0.0.1") | Some("::1") -> True
+        _ -> False
+      }
+      let query = case parsed.query, local {
+        Some(q), _ if q != "" ->
+          case string.contains(q, "sslmode=") {
+            True -> Some(q)
+            False -> Some(q <> "&sslmode=require")
+          }
+        _, True -> None
+        _, False -> Some("sslmode=require")
+      }
+      uri.Uri(..parsed, port:, query:) |> uri.to_string
+    }
+  }
+}
+
+/// The pool connects asynchronously; give it a moment and surface a readable
+/// error instead of letting every request fail with a 500.
+fn wait_until_connected(
+  db: pog.Connection,
+  attempts: Int,
+) -> Result(Nil, String) {
+  case pog.query("SELECT 1") |> pog.execute(db) {
+    Ok(_) -> Ok(Nil)
+    Error(error) if attempts <= 1 ->
+      Error(
+        "could not reach the database: "
+        <> string.inspect(error)
+        <> " (check DATABASE_URL, and that the host allows TLS connections)",
+      )
+    Error(_) -> {
+      process.sleep(500)
+      wait_until_connected(db, attempts - 1)
+    }
+  }
+}
+
+/// Apply `sql/schema.sql` if it sits next to the service. Comments are
+/// stripped, statements split on `;`, and the BEGIN/COMMIT wrapper dropped
+/// because the extended query protocol runs one statement at a time.
+fn apply_schema(db: pog.Connection) -> Nil {
+  case simplifile.read("sql/schema.sql") {
+    Error(_) ->
+      io.println(
+        "community: sql/schema.sql not found next to the service, skipping schema check",
+      )
+    Ok(sql) -> {
+      let statements =
+        sql
+        |> string.split(
+          "
+",
+        )
+        |> list.filter(fn(line) { !string.starts_with(string.trim(line), "--") })
+        |> string.join(
+          "
+",
+        )
+        |> string.split(";")
+        |> list.map(string.trim)
+        |> list.filter(fn(statement) {
+          statement != ""
+          && string.uppercase(statement) != "BEGIN"
+          && string.uppercase(statement) != "COMMIT"
+        })
+      let applied =
+        list.try_each(statements, fn(statement) {
+          pog.query(statement) |> pog.execute(db) |> result.replace(Nil)
+        })
+      case applied {
+        Ok(_) ->
+          io.println(
+            "community: database schema checked ("
+            <> int.to_string(list.length(statements))
+            <> " statements)",
+          )
+        Error(error) ->
+          io.println(
+            "community: could not apply sql/schema.sql: "
+            <> string.inspect(error),
+          )
+      }
+    }
+  }
 }
 
 fn store_for(db: pog.Connection) -> Store {

@@ -50,4 +50,5 @@ gleam_time = { version = ">= 1.10.0 and < 2.0.0" }
 gleeunit = { version = ">= 1.0.0 and < 2.0.0" }
 mist = { version = ">= 6.0.3 and < 7.0.0" }
 pog = { version = ">= 4.1.0 and < 5.0.0" }
+simplifile = { version = ">= 2.0.0 and < 3.0.0" }
 wisp = { version = ">= 2.2.2 and < 3.0.0" }

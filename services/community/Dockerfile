@@ -13,6 +13,8 @@ RUN gleam export erlang-shipment
 FROM ghcr.io/gleam-lang/gleam:v1.18.1-erlang-alpine
 WORKDIR /app
 COPY --from=build /app/build/erlang-shipment ./
+# The service applies this idempotent schema on startup when DATABASE_URL is set.
+COPY --from=build /app/sql ./sql
 ENV PORT=8787
 EXPOSE 8787
 # Gleam 1.18 emits license comments above the shebang in entrypoint.sh, so the

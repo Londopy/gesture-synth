@@ -37,13 +37,20 @@ test suite.
 
 ```sh
 createdb gesture_synth_community
-psql postgres://localhost/gesture_synth_community -f sql/schema.sql
 
 DATABASE_URL=postgres://user:pass@localhost:5432/gesture_synth_community gleam run
 # community: store=postgres ...
+# community: database schema checked (19 statements)
 ```
 
 (On PowerShell: `$env:DATABASE_URL = "postgres://..."; gleam run`.)
+
+On startup the service waits for the pool to connect (10 s), then applies
+`sql/schema.sql` from the working directory; the file is idempotent so this
+is safe on every boot. Hosted connection strings without a port or `sslmode`
+(Neon, Supabase, Render) are normalised to `:5432` and `sslmode=require`.
+To manage the schema yourself, run `psql "$DATABASE_URL" -f sql/schema.sql`
+and start the service from a directory without `sql/`.
 
 ### Tests
 
