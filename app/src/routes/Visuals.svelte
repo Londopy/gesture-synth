@@ -83,7 +83,18 @@
       <section class="glass card col">
         <label class="col"><span class="label">Particle density ({Math.round(settings.s.particleDensity * 100)}% of 20k)</span><input type="range" min="0" max="1" step="0.05" bind:value={settings.s.particleDensity} /></label>
         <label class="col"><span class="label">Ghost opacity ({Math.round(settings.s.ghostOpacity * 100)}%)</span><input type="range" min="0" max="1" step="0.05" bind:value={settings.s.ghostOpacity} /></label>
-        <label class="row"><input type="checkbox" bind:checked={settings.s.cameraFeed} /> Camera feed (dark tint, practice view)</label>
+        <div class="col">
+          <span class="label">View</span>
+          <div class="seg" role="group" aria-label="View mode">
+            <button class:active={settings.s.viewMode === 'performance'} onclick={() => (settings.s.viewMode = 'performance')}>Performance</button>
+            <button class:active={settings.s.viewMode === 'practice'} onclick={() => (settings.s.viewMode = 'practice')}>Practice</button>
+            <button class:active={settings.s.viewMode === 'clear'} onclick={() => (settings.s.viewMode = 'clear')}>Clear camera</button>
+          </div>
+          <p class="hint">Performance: wireframe only. Practice: your real hands under a dark tint. Clear camera: the plain picture with no effects, for checking your framing or recording yourself. Press <kbd>C</kbd> to cycle.</p>
+          {#if settings.s.viewMode === 'clear'}
+            <label class="row"><input type="checkbox" bind:checked={settings.s.clearShowHands} /> Draw the hand wireframe over the clear picture</label>
+          {/if}
+        </div>
         <label class="row"><input type="checkbox" bind:checked={settings.s.bloom} /> Bloom</label>
         <label class="row"><input type="checkbox" bind:checked={settings.s.showHud} /> HUD</label>
         <p class="hint">Performance view (F) hides all chrome. The renderer steps down particles, bloom and ghost rate automatically when the frame rate drops below 48 fps and back up when it recovers.</p>
@@ -127,5 +138,17 @@
   .hint {
     font-size: 12px;
     color: var(--text-faint);
+  }
+  .seg {
+    display: inline-flex;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    align-self: flex-start;
+  }
+  .seg button {
+    border: none;
+    border-radius: 0;
+    font-size: 12px;
   }
 </style>

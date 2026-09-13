@@ -106,11 +106,35 @@ export class GestureScene {
     if (this.aspect / va < 1) this.feed.scale.set(va, 1, 1);
   }
 
-  setFeedVisible(on: boolean, mirror: boolean) {
+  /**
+   * View modes (spec 8 layer 3 + the Clear mode):
+   *  - performance: no camera feed, full effects
+   *  - practice:    camera feed with a strong dark tint under the effects
+   *  - clear:       the raw camera picture, untinted, no effects; hands optional
+   */
+  viewMode: 'performance' | 'practice' | 'clear' = 'performance';
+  clearShowHands = true;
+
+  setView(mode: 'performance' | 'practice' | 'clear', showHands: boolean, mirror: boolean) {
+    this.viewMode = mode;
+    this.clearShowHands = showHands;
+    const clear = mode === 'clear';
     if (this.feed) {
-      this.feed.visible = on;
+      this.feed.visible = mode !== 'performance';
       this.feed.scale.x = Math.abs(this.feed.scale.x) * (mirror ? -1 : 1);
+      this.feed.position.z = clear ? 0.4 : -0.5; // in clear mode the picture sits above the ring/background
     }
+    if (this.feedMat) {
+      this.feedMat.transparent = !clear;
+      this.feedMat.color.setRGB(clear ? 1 : 0.55, clear ? 1 : 0.62, clear ? 1 : 0.8);
+    }
+    this.background.mesh.visible = !clear;
+    this.fifths.group.visible = !clear;
+    this.constellation.group.visible = !clear;
+    this.particles.points.visible = !clear && this.particles.points.visible;
+    this.hands.group.visible = !clear || showHands;
+    this.theremin.group.visible = !clear && this.theremin.group.visible;
+    this.renderer.toneMapping = clear ? THREE.NoToneMapping : THREE.ACESFilmicToneMapping;
   }
 
   resize() {
@@ -148,12 +172,18 @@ export class GestureScene {
     this.world.scale.setScalar(1 + this.pulse * 0.04);
 
     for (const l of this.layers) l.update(f);
+    const clear = this.viewMode === 'clear';
     if (this.feedMat) {
-      this.feedMat.opacity = 0.22 + 0.12 * f.live.volume;
+      this.feedMat.opacity = clear ? 1 : 0.22 + 0.12 * f.live.volume;
     }
-    this.bloom.enabled = this.bloomEnabled && f.theme.bloom && this.quality < 2;
+    if (clear) {
+      // effects off; the wireframe (if shown) is the only overlay
+      this.particles.points.visible = false;
+      this.theremin.group.visible = false;
+    }
+    this.bloom.enabled = !clear && this.bloomEnabled && f.theme.bloom && this.quality < 2;
     this.bloom.strength = f.theme.bloom_strength * (0.9 + f.level * 0.4 + this.pulse * 0.15);
-    this.haze.enabled = this.hazeEnabled && this.quality < 3;
+    this.haze.enabled = !clear && this.hazeEnabled && this.quality < 3;
     this.haze.update(f.live.theremin ? f.live.cutoff : f.live.degree > 0 || f.ghosts.some((g) => g.active) ? f.live.cutoff : 0.75, f.theme.haze_strength, f.dt, this.width, this.height);
     this.composer.render();
     // degradation ladder

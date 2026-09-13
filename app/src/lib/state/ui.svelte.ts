@@ -22,6 +22,7 @@ class UiStore {
   tourStep = $state(0);
   grid = $state(false);
   exportSheet = $state(false);
+  recordSheet = $state(false);
   shareSheet = $state(false);
   railOpen = $state(false);
   toasts = $state<Toast[]>([]);

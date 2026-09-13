@@ -30,6 +30,8 @@ export const DEFAULT_SHORTCUTS: Shortcuts = {
   save: 'Mod+s',
   export: 'Mod+e',
   grid: 'g',
+  viewMode: 'c',
+  recordVideo: 'Mod+Shift+r',
 };
 
 export interface Settings {
@@ -40,7 +42,15 @@ export interface Settings {
   theme: string;
   particleDensity: number;
   ghostOpacity: number;
-  cameraFeed: boolean;
+  /** performance = no feed, practice = tinted feed under effects, clear = raw camera, no effects */
+  viewMode: 'performance' | 'practice' | 'clear';
+  clearShowHands: boolean;
+  recSource: 'scene' | 'camera';
+  recMic: boolean;
+  recMicDeviceId: string;
+  recMicGain: number;
+  recFormat: 'webm' | 'mp4';
+  recFps: number;
   bloom: boolean;
   reducedMotion: boolean;
   highContrast: boolean;
@@ -103,7 +113,14 @@ export function defaultSettings(): Settings {
     theme: 'Neon',
     particleDensity: isPhone ? 0.1 : 1,
     ghostOpacity: 0.35,
-    cameraFeed: false,
+    viewMode: 'performance',
+    clearShowHands: true,
+    recSource: 'scene',
+    recMic: false,
+    recMicDeviceId: '',
+    recMicGain: 1,
+    recFormat: 'webm',
+    recFps: 30,
     bloom: !isPhone,
     reducedMotion: typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches,
     highContrast: false,
@@ -142,6 +159,7 @@ function load(): Settings {
     const raw = localStorage.getItem(KEY);
     if (!raw) return d;
     const saved = JSON.parse(raw);
+    if (saved.cameraFeed && !saved.viewMode) saved.viewMode = 'practice';
     return {
       ...d,
       ...saved,

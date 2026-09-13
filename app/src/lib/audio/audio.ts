@@ -213,6 +213,48 @@ export class WorkletEngine implements EngineBackend {
     return { bass, treble, level };
   }
 
+  /**
+   * Build a MediaStream carrying the engine mix (no metronome) plus an optional
+   * microphone, for MediaRecorder. Call stopRecordMix() when done.
+   */
+  recordMix(mic: MediaStream | null, micGain = 1): MediaStream {
+    this.stopRecordMix();
+    const dest = this.ctx.createMediaStreamDestination();
+    this.master.connect(dest);
+    if (mic) {
+      const src = this.ctx.createMediaStreamSource(mic);
+      const g = this.ctx.createGain();
+      g.gain.value = micGain;
+      src.connect(g);
+      g.connect(dest);
+      this.micNodes = { src, g };
+    }
+    this.recordDest = dest;
+    return dest.stream;
+  }
+
+  setMicGain(v: number) {
+    if (this.micNodes) this.micNodes.g.gain.value = v;
+  }
+
+  stopRecordMix() {
+    if (this.recordDest) {
+      try {
+        this.master.disconnect(this.recordDest);
+      } catch {
+        /* already gone */
+      }
+      this.recordDest = null;
+    }
+    if (this.micNodes) {
+      this.micNodes.src.disconnect();
+      this.micNodes.g.disconnect();
+      this.micNodes = null;
+    }
+  }
+  private recordDest: MediaStreamAudioDestinationNode | null = null;
+  private micNodes: { src: MediaStreamAudioSourceNode; g: GainNode } | null = null;
+
   setMetronomeMonitor(on: boolean) {
     this.cueGain.gain.value = on ? 1 : 0;
   }

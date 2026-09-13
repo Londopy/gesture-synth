@@ -11,6 +11,8 @@
     "dev": "npm run wasm && npm --workspace app run dev",
     "build": "npm run wasm && npm --workspace app run build",
     "preview": "npm --workspace app run preview",
+    "serve": "node scripts/serve.mjs 4173 app/dist",
+    "release:notes": "patchnotes CHANGELOG.md json | node scripts/release-notes.mjs",
     "tauri": "tauri",
     "tauri:dev": "npm run wasm && tauri dev",
     "tauri:build": "npm run wasm && tauri build",

@@ -70,6 +70,11 @@ npm run tauri:dev               # or: npm run tauri:build
 | fist | mute | pinch | arpeggiator (height = rate) |
 | tilt inward / outward | major / minor | | |
 
+Views: `C` cycles **performance** (wireframe only), **practice** (your hands
+under a dark tint) and **clear camera** (the plain picture, no effects).
+`Ctrl/Cmd+Shift+R` opens the **recorder**: scene or raw camera, instrument
+audio, optional microphone, saved as webm or mp4.
+
 Extras: flick the left hand toward the camera for a bass note, touch both fists
 and rotate to change key around the circle of fifths, hold still for two
 seconds to latch the chord. `Tab` switches to **Theremin** mode (right height =
@@ -120,6 +125,16 @@ so instruments can change after recording and files stay tiny.
 | ffmpeg | any | optional mp4 export |
 | Tauri prerequisites | | desktop build ([docs](https://v2.tauri.app/start/prerequisites/)) |
 
+## Download instead of building
+
+Every [release](https://github.com/Londopy/gesture-synth/releases) has Windows
+(.msi), macOS (.dmg) and Linux (.AppImage, .deb) installers, a zip of the
+website you can run on your own computer with one command (`node serve.mjs`,
+then open http://localhost:4173), `SHA256SUMS.txt` to verify downloads, and an
+install tutorial in the release notes. The notes are generated from
+[CHANGELOG.md](CHANGELOG.md) by [patchnotes](https://pypi.org/project/patchnotes/).
+`npm run serve` runs the same local server against your own build.
+
 ## Hosting the web build
 
 Cross-origin isolation gives the app SharedArrayBuffer (lower latency, mp4 in
@@ -155,7 +170,7 @@ synthetic hands through the whole pipeline.
 
 `Space` play/stop · `R` record · `1-4` track · `M`/`S` mute/solo ·
 `Delete` clear · `Tab` theremin · `[`/`]` key · `-`/`=` BPM · `Esc` panic ·
-`F` performance view · `G` grid · `H` help · `Ctrl/Cmd+S` save · `Ctrl/Cmd+E` export
+`F` performance view · `C` view mode · `G` grid · `H` help · `Ctrl/Cmd+Shift+R` record video · `Ctrl/Cmd+S` save · `Ctrl/Cmd+E` export
 
 ## Contributing
 

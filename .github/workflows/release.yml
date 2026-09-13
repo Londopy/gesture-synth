@@ -1,5 +1,10 @@
 name: Release
 
+# Push a tag like v0.2.0 (after `patchnotes CHANGELOG.md bump 0.2.0`):
+#   1. desktop: Tauri bundles for Windows (.msi + setup.exe), macOS (.dmg), Linux (.AppImage + .deb)
+#   2. web: zip of the built site with serve.mjs for running on localhost
+#   3. finalize: SHA256SUMS.txt, release notes from CHANGELOG.md (patchnotes) + install tutorial, publish
+
 on:
   push:
     tags: ["v*"]
@@ -7,74 +12,151 @@ on:
 permissions:
   contents: write
 
+env:
+  NODE_VERSION: "22"
+
 jobs:
   desktop:
-    name: Desktop bundles
+    name: Desktop (${{ matrix.name }})
     strategy:
       fail-fast: false
       matrix:
         include:
-          - os: windows-latest
+          - name: windows
+            os: windows-latest
             args: ""
-          - os: macos-latest
+          - name: macos
+            os: macos-latest
             args: "--target universal-apple-darwin"
-          - os: ubuntu-latest
+          - name: linux
+            os: ubuntu-22.04
             args: ""
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
         with:
-          targets: wasm32-unknown-unknown${{ matrix.os == 'macos-latest' && ',aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+          targets: wasm32-unknown-unknown${{ matrix.name == 'macos' && ',aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
       - uses: Swatinem/rust-cache@v2
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: ${{ env.NODE_VERSION }}
           cache: npm
       - name: Linux prerequisites
-        if: matrix.os == 'ubuntu-latest'
+        if: matrix.name == 'linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libasound2-dev ffmpeg
       - name: ffmpeg (macOS)
-        if: matrix.os == 'macos-latest'
+        if: matrix.name == 'macos'
         run: brew install ffmpeg
       - name: ffmpeg (Windows)
-        if: matrix.os == 'windows-latest'
+        if: matrix.name == 'windows'
         run: choco install ffmpeg -y --no-progress
       - run: npm ci --ignore-scripts
       - run: node scripts/fetch-models.mjs
       - name: ffmpeg sidecar
         run: node scripts/fetch-ffmpeg.mjs
         continue-on-error: true
-      - uses: tauri-apps/tauri-action@v0
+      - name: Build bundles
+        uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: ${{ github.ref_name }}
           releaseName: Gesture Synth ${{ github.ref_name }}
-          releaseBody: See CHANGELOG.md for details.
+          releaseBody: Building release assets…
           releaseDraft: true
+          prerelease: ${{ startsWith(github.ref_name, 'v0.') }}
           args: ${{ matrix.args }}
 
   web:
-    name: Web build
+    name: Web bundle
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@v2
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: ${{ env.NODE_VERSION }}
           cache: npm
       - run: npm ci --ignore-scripts
       - run: node scripts/fetch-models.mjs
       - run: npm run build
-      - name: Zip
-        run: cd app/dist && zip -r ../../gesture-synth-web-${{ github.ref_name }}.zip .
-      - uses: softprops/action-gh-release@v2
+      - name: Assemble local-server bundle
+        run: |
+          set -e
+          out=gesture-synth-web-${{ github.ref_name }}
+          mkdir -p "$out"
+          cp -r app/dist/. "$out/"
+          cp scripts/serve.mjs "$out/serve.mjs"
+          cat > "$out/README.txt" <<'EOF'
+          Gesture Synth, web build.
+
+          Needs Node.js 18 or newer (https://nodejs.org).
+
+              node serve.mjs
+
+          then open http://localhost:4173 in Chrome, Edge or Firefox and click Start.
+          Optional: node serve.mjs 8080   (another port)
+
+          Everything runs on this computer. The MediaPipe hand model and the
+          audio engine are included; no internet connection is needed after unzipping.
+          EOF
+          cp LICENSE "$out/LICENSE.txt"
+          zip -qr "$out.zip" "$out"
+          ls -la "$out.zip"
+      - uses: actions/upload-artifact@v4
         with:
-          draft: true
-          files: gesture-synth-web-*.zip
+          name: web-bundle
+          path: gesture-synth-web-*.zip
+          if-no-files-found: error
+
+  finalize:
+    name: Checksums, notes, publish
+    needs: [desktop, web]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install patchnotes
+      - uses: actions/download-artifact@v4
+        with:
+          name: web-bundle
+          path: dist-web
+      - name: Upload web bundle to the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload "${{ github.ref_name }}" dist-web/*.zip --clobber
+      - name: Download every release asset
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p assets
+          gh release download "${{ github.ref_name }}" --dir assets --pattern '*'
+          ls -la assets
+      - name: SHA256SUMS.txt
+        run: |
+          cd assets
+          rm -f SHA256SUMS.txt
+          sha256sum * > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Release notes from CHANGELOG.md
+        run: |
+          patchnotes CHANGELOG.md validate
+          patchnotes CHANGELOG.md json | node scripts/release-notes.mjs "${{ github.ref_name }}" "${{ github.repository }}" notes.md
+          cat notes.md
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload "${{ github.ref_name }}" assets/SHA256SUMS.txt --clobber
+          gh release edit "${{ github.ref_name }}" --title "Gesture Synth ${{ github.ref_name }}" --notes-file notes.md --draft=false

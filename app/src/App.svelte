@@ -14,6 +14,7 @@
   import HelpOverlay from './lib/ui/HelpOverlay.svelte';
   import Tour from './lib/ui/Tour.svelte';
   import ExportSheet from './lib/ui/ExportSheet.svelte';
+  import RecordSheet from './lib/ui/RecordSheet.svelte';
   import Toasts from './lib/ui/Toasts.svelte';
   import ConfirmDialog from './lib/ui/ConfirmDialog.svelte';
   import Learn from './routes/Learn.svelte';
@@ -134,6 +135,7 @@
   {#if ui.help}<HelpOverlay />{/if}
   {#if ui.tour && rt.phase === 'ready'}<Tour />{/if}
   {#if ui.exportSheet}<ExportSheet canvas={() => sceneCanvas?.getCanvas() ?? null} />{/if}
+  {#if ui.recordSheet && rt.phase === 'ready'}<RecordSheet canvas={() => sceneCanvas?.getCanvas() ?? null} />{/if}
   <Toasts />
   <ConfirmDialog />
 </div>

@@ -123,7 +123,8 @@
         <div class="kv"><span>Tracking</span><span>{rt.trackingStatus} · {rt.trackingFps} fps · {rt.inferenceMs} ms</span></div>
         <div class="row wrap">
           <button onclick={() => (calibrating = !calibrating)}>{calibrating ? 'Close calibration' : 'Calibrate'}</button>
-          <label class="row"><input type="checkbox" bind:checked={settings.s.cameraFeed} /> Show camera feed</label>
+          <label class="row">View
+            <select bind:value={settings.s.viewMode}><option value="performance">performance (no feed)</option><option value="practice">practice (tinted feed)</option><option value="clear">clear camera</option></select></label>
         </div>
         {#if calibrating}<div class="calbox"><Calibration onDone={() => (calibrating = false)} /></div>{/if}
       </section>

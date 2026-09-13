@@ -84,7 +84,7 @@
         gh.state = rt.tracks[i];
       }
       frame.learn = learn ? learn() : null;
-      scene.setFeedVisible(settings.s.cameraFeed && !ui.performance, frame.mirror);
+      scene.setView(ui.performance && settings.s.viewMode !== 'clear' ? 'performance' : settings.s.viewMode, settings.s.clearShowHands, frame.mirror);
       scene.render(frame);
       if (++hudTick % 30 === 0) {
         fps = Math.round(scene.fps);

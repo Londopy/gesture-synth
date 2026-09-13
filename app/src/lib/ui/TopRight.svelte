@@ -28,6 +28,17 @@
       {#each THEME_NAMES as n}<option value={n}>{n}</option>{/each}
     </select>
   </label>
+  <label class="col">
+    <span class="label">View</span>
+    <select bind:value={settings.s.viewMode} title="View mode (C cycles)">
+      <option value="performance">Performance</option>
+      <option value="practice">Practice</option>
+      <option value="clear">Clear camera</option>
+    </select>
+  </label>
+  <button class="icon rec" class:active={ui.recordSheet} title="Record video (Ctrl/Cmd+Shift+R)" aria-label="Record video" onclick={() => (ui.recordSheet = !ui.recordSheet)}>
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1.5" y="4" width="9" height="8" rx="1.5" /><path d="M10.5 7l4-2v6l-4-2z" /></svg>
+  </button>
   <button class="icon" title="Help (H)" aria-label="Help" onclick={() => ui.toggleHelp()}>?</button>
   <button class="icon" title="Performance view (F)" aria-label="Performance view" onclick={() => ui.toggleFullscreen()}>
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4" /></svg>
@@ -50,5 +61,9 @@
   }
   .icon {
     font-weight: 600;
+  }
+  .rec.active {
+    border-color: var(--danger);
+    color: var(--danger);
   }
 </style>

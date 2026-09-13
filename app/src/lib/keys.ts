@@ -25,7 +25,9 @@ export type Action =
   | 'help'
   | 'save'
   | 'export'
-  | 'grid';
+  | 'grid'
+  | 'viewMode'
+  | 'recordVideo';
 
 export const ACTION_LABELS: Record<Action, string> = {
   playPause: 'Play / stop',
@@ -49,6 +51,8 @@ export const ACTION_LABELS: Record<Action, string> = {
   save: 'Save session',
   export: 'Export',
   grid: 'Toggle beat grid',
+  viewMode: 'Cycle view: performance / practice / clear camera',
+  recordVideo: 'Record video (scene or camera, audio, mic)',
 };
 
 /** Normalise a KeyboardEvent into the combo string format used in settings. */
@@ -58,7 +62,7 @@ export function comboOf(e: KeyboardEvent): string {
   if (k === ' ') k = ' ';
   const parts: string[] = [];
   if (mod) parts.push('Mod');
-  if (e.shiftKey && k.length > 1) parts.push('Shift'); // Shift only matters for non-character keys
+  if (e.shiftKey && (k.length > 1 || mod)) parts.push('Shift'); // Shift matters for non-character keys and for Mod chords
   parts.push(k.length === 1 ? k.toLowerCase() : k);
   return parts.join('+');
 }
@@ -183,6 +187,16 @@ export async function run(action: Action, e?: KeyboardEvent) {
       break;
     case 'grid':
       ui.toggleGrid();
+      break;
+    case 'viewMode': {
+      const order = ['performance', 'practice', 'clear'] as const;
+      const i = order.indexOf(settings.s.viewMode);
+      settings.s.viewMode = order[(i + 1) % order.length];
+      ui.toast(settings.s.viewMode === 'clear' ? 'Clear camera' : settings.s.viewMode === 'practice' ? 'Practice view' : 'Performance view', 'info', 1200);
+      break;
+    }
+    case 'recordVideo':
+      ui.recordSheet = !ui.recordSheet;
       break;
   }
 }
