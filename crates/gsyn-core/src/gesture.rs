@@ -104,7 +104,13 @@ pub struct Calibration {
 
 impl Default for Calibration {
     fn default() -> Self {
-        Self { top_y: 0.15, bottom_y: 0.85, mirror_frame: false, swap_hands: false, invert_tilt: false }
+        Self {
+            top_y: 0.15,
+            bottom_y: 0.85,
+            mirror_frame: false,
+            swap_hands: false,
+            invert_tilt: false,
+        }
     }
 }
 
@@ -168,7 +174,11 @@ struct Debounce<T: Copy + PartialEq> {
 
 impl<T: Copy + PartialEq> Debounce<T> {
     fn new(v: T) -> Self {
-        Self { current: v, candidate: v, since_ms: 0.0 }
+        Self {
+            current: v,
+            candidate: v,
+            since_ms: 0.0,
+        }
     }
 
     /// Observe a candidate at time `now`. Returns true when `current` changed.
@@ -382,10 +392,23 @@ impl GestureParser {
         self.update_track(Handedness::Right, rf, t_ms, dt);
 
         // ---- 2. confidence / loss handling -------------------------------------
-        let need_left = self.cfg.mode == PlayMode::Theremin || matches!(self.cfg.left, LeftScheme::Full | LeftScheme::ScaleOnly);
-        let conf_l = if self.left.info.present { self.left.info.confidence } else { 0.0 };
-        let conf_r = if self.right.info.present { self.right.info.confidence } else { 0.0 };
-        let conf = if need_left { conf_l.min(conf_r) } else { conf_r };
+        let need_left = self.cfg.mode == PlayMode::Theremin
+            || matches!(self.cfg.left, LeftScheme::Full | LeftScheme::ScaleOnly);
+        let conf_l = if self.left.info.present {
+            self.left.info.confidence
+        } else {
+            0.0
+        };
+        let conf_r = if self.right.info.present {
+            self.right.info.confidence
+        } else {
+            0.0
+        };
+        let conf = if need_left {
+            conf_l.min(conf_r)
+        } else {
+            conf_r
+        };
         self.state.confidence = conf.max(conf_l.max(conf_r) * 0.5);
         let lost = conf < self.cfg.confidence_floor;
         if lost {
@@ -432,7 +455,10 @@ impl GestureParser {
             if !self.state.latched {
                 self.still_since = t_ms;
             }
-        } else if !self.state.latched && self.state.degree > 0 && t_ms - self.still_since >= self.cfg.latch_hold_ms as f64 {
+        } else if !self.state.latched
+            && self.state.degree > 0
+            && t_ms - self.still_since >= self.cfg.latch_hold_ms as f64
+        {
             self.state.latched = true;
             self.events.push(Event::Latch { on: true });
         }
@@ -446,11 +472,18 @@ impl GestureParser {
         let cal = self.cfg.calibration;
         let fix = |h: HandFrame| -> HandFrame {
             // MediaPipe labels assume a mirrored (selfie) image. Raw webcam frames are not mirrored.
-            let mut hd = if cal.mirror_frame { h.handedness } else { h.handedness.swapped() };
+            let mut hd = if cal.mirror_frame {
+                h.handedness
+            } else {
+                h.handedness.swapped()
+            };
             if cal.swap_hands {
                 hd = hd.swapped();
             }
-            HandFrame { handedness: hd, ..h }
+            HandFrame {
+                handedness: hd,
+                ..h
+            }
         };
         match hands.len() {
             0 => (None, None),
@@ -458,12 +491,20 @@ impl GestureParser {
                 let h = fix(hands[0]);
                 // continuity: if the other hand was seen very recently near this wrist, keep it.
                 let w = h.landmarks[lm::WRIST];
-                let near = |t: &HandTrack| t.ever_seen && self.last_ms - t.last_seen_ms < 400.0 && math::dist2(t.info.wrist, w) < 0.12;
+                let near = |t: &HandTrack| {
+                    t.ever_seen
+                        && self.last_ms - t.last_seen_ms < 400.0
+                        && math::dist2(t.info.wrist, w) < 0.12
+                };
                 let other_near = match h.handedness {
                     Handedness::Left => near(&self.right) && !near(&self.left),
                     Handedness::Right => near(&self.left) && !near(&self.right),
                 };
-                let hd = if other_near { h.handedness.swapped() } else { h.handedness };
+                let hd = if other_near {
+                    h.handedness.swapped()
+                } else {
+                    h.handedness
+                };
                 match hd {
                     Handedness::Left => (Some(h), None),
                     Handedness::Right => (None, Some(h)),
@@ -480,10 +521,20 @@ impl GestureParser {
                 let ax = a.landmarks[lm::WRIST][0];
                 let bx = b.landmarks[lm::WRIST][0];
                 // raw frame: the user's right hand appears at smaller x.
-                let (right, left) = if (ax < bx) != cal.mirror_frame { (a, b) } else { (b, a) };
+                let (right, left) = if (ax < bx) != cal.mirror_frame {
+                    (a, b)
+                } else {
+                    (b, a)
+                };
                 (
-                    Some(HandFrame { handedness: Handedness::Left, ..left }),
-                    Some(HandFrame { handedness: Handedness::Right, ..right }),
+                    Some(HandFrame {
+                        handedness: Handedness::Left,
+                        ..left
+                    }),
+                    Some(HandFrame {
+                        handedness: Handedness::Right,
+                        ..right
+                    }),
                 )
             }
         }
@@ -506,7 +557,8 @@ impl GestureParser {
 
         // finger extended tests (spec 4.2)
         let ext = |mcp: usize, pip: usize, tip: usize| -> bool {
-            math::dist(p[tip], wrist) > math::dist(p[pip], wrist) * 1.25 && math::angle_deg(p[mcp], p[pip], p[tip]) > 150.0
+            math::dist(p[tip], wrist) > math::dist(p[pip], wrist) * 1.25
+                && math::angle_deg(p[mcp], p[pip], p[tip]) > 150.0
         };
         let thumb_ext = math::dist(p[lm::THUMB_TIP], p[lm::PINKY_MCP]) > 1.1 * palm;
         let fingers = [
@@ -530,11 +582,18 @@ impl GestureParser {
         };
 
         // tilt (spec 4.4): palm normal vs camera axis, projected on the horizontal plane
-        let mut n = math::normalize(math::cross(math::sub(p[lm::INDEX_MCP], wrist), math::sub(p[lm::PINKY_MCP], wrist)));
+        let mut n = math::normalize(math::cross(
+            math::sub(p[lm::INDEX_MCP], wrist),
+            math::sub(p[lm::PINKY_MCP], wrist),
+        ));
         if which == Handedness::Left {
             n = math::scale(n, -1.0);
         }
-        let mut s = if which == Handedness::Right { 1.0 } else { -1.0 };
+        let mut s = if which == Handedness::Right {
+            1.0
+        } else {
+            -1.0
+        };
         if cal.mirror_frame {
             s = -s;
         }
@@ -591,7 +650,10 @@ impl GestureParser {
                     self.degree.set(degree);
                     changed = true;
                 }
-                let q = self.cfg.fixed_quality.unwrap_or_else(|| music::diatonic_quality(degree, self.state.mode));
+                let q = self
+                    .cfg
+                    .fixed_quality
+                    .unwrap_or_else(|| music::diatonic_quality(degree, self.state.mode));
                 if self.quality.current != q {
                     self.quality.set(q);
                     changed = true;
@@ -633,7 +695,9 @@ impl GestureParser {
                         }
                     }
                     // flick toward camera -> bass hit (spec 4.9)
-                    if info.z_velocity > self.cfg.flick_threshold && t_ms - self.last_flick_ms > 300.0 {
+                    if info.z_velocity > self.cfg.flick_threshold
+                        && t_ms - self.last_flick_ms > 300.0
+                    {
                         if let Some(note) = self.state.bass_note() {
                             self.events.push(Event::BassHit { note });
                             self.last_flick_ms = t_ms;
@@ -678,17 +742,26 @@ impl GestureParser {
         let span = (cal.bottom_y - cal.top_y).max(0.05);
         let height = ((cal.bottom_y - info.wrist[1]) / span).clamp(0.0, 1.0);
         let vol = libm::powf(height, 1.6);
-        let pan_x = if cal.mirror_frame { info.wrist[0] } else { 1.0 - info.wrist[0] };
+        let pan_x = if cal.mirror_frame {
+            info.wrist[0]
+        } else {
+            1.0 - info.wrist[0]
+        };
         let pan = ((pan_x - 0.5) * 1.6).clamp(-1.0, 1.0);
 
-        self.cutoff_raw += (cutoff - self.cutoff_raw) * math::one_pole_coeff(self.cfg.cutoff_tc, dt);
+        self.cutoff_raw +=
+            (cutoff - self.cutoff_raw) * math::one_pole_coeff(self.cfg.cutoff_tc, dt);
         self.pan_raw += (pan - self.pan_raw) * math::one_pole_coeff(0.12, dt);
 
         // pinch toggles arp (edge triggered, 150 ms debounce); while arp, height = rate
         if info.pinch && !self.pinch_prev {
             self.pinch_since = t_ms;
         }
-        if info.pinch && self.pinch_prev && t_ms - self.pinch_since > 150.0 && self.pinch_since > 0.0 {
+        if info.pinch
+            && self.pinch_prev
+            && t_ms - self.pinch_since > 150.0
+            && self.pinch_since > 0.0
+        {
             self.state.arp = !self.state.arp;
             self.events.push(Event::ArpToggle { on: self.state.arp });
             self.pinch_since = -1.0; // consumed until release
@@ -701,7 +774,8 @@ impl GestureParser {
         if self.state.arp {
             self.state.arp_rate += (height - self.state.arp_rate) * math::one_pole_coeff(0.1, dt);
         } else {
-            self.volume_raw += (vol - self.volume_raw) * math::one_pole_coeff(self.cfg.volume_tc, dt);
+            self.volume_raw +=
+                (vol - self.volume_raw) * math::one_pole_coeff(self.cfg.volume_tc, dt);
         }
         changed
     }
@@ -710,7 +784,11 @@ impl GestureParser {
     fn process_key_gesture(&mut self) {
         let l = self.left.info;
         let r = self.right.info;
-        let active = l.present && r.present && l.fist && r.fist && math::dist2(l.wrist, r.wrist) < 1.6 * l.palm_size.max(r.palm_size);
+        let active = l.present
+            && r.present
+            && l.fist
+            && r.fist
+            && math::dist2(l.wrist, r.wrist) < 1.6 * l.palm_size.max(r.palm_size);
         if !active {
             self.key_gesture = None;
             return;
@@ -719,7 +797,12 @@ impl GestureParser {
         let dy = r.wrist[1] - l.wrist[1];
         let angle = libm::atan2f(dy, dx).to_degrees();
         match &mut self.key_gesture {
-            None => self.key_gesture = Some(KeyGesture { last_angle: angle, accum: 0.0 }),
+            None => {
+                self.key_gesture = Some(KeyGesture {
+                    last_angle: angle,
+                    accum: 0.0,
+                })
+            }
             Some(kg) => {
                 let mut d = angle - kg.last_angle;
                 if d > 180.0 {
@@ -739,7 +822,11 @@ impl GestureParser {
                     steps -= 1;
                 }
                 if steps != 0 {
-                    let s = if self.cfg.calibration.mirror_frame { steps } else { -steps };
+                    let s = if self.cfg.calibration.mirror_frame {
+                        steps
+                    } else {
+                        -steps
+                    };
                     self.step_key_fifths(s);
                 }
             }
@@ -764,20 +851,24 @@ impl GestureParser {
             self.theremin_midi += (target - self.theremin_midi) * math::one_pole_coeff(0.045, dt);
             self.state.theremin_pitch_hz = music::midi_to_hz(self.theremin_midi);
             let cutoff = ((r.tilt + 45.0) / 90.0).clamp(0.0, 1.0);
-            self.cutoff_raw += (cutoff - self.cutoff_raw) * math::one_pole_coeff(self.cfg.cutoff_tc, dt);
+            self.cutoff_raw +=
+                (cutoff - self.cutoff_raw) * math::one_pole_coeff(self.cfg.cutoff_tc, dt);
         }
         if l.present {
             let h = ((cal.bottom_y - l.wrist[1]) / span).clamp(0.0, 1.0);
             let vol = libm::powf(h, 1.6);
-            self.volume_raw += (vol - self.volume_raw) * math::one_pole_coeff(self.cfg.volume_tc, dt);
+            self.volume_raw +=
+                (vol - self.volume_raw) * math::one_pole_coeff(self.cfg.volume_tc, dt);
             let vib = (l.tilt.abs() / 45.0).clamp(0.0, 1.0);
-            self.state.theremin_vibrato += (vib - self.state.theremin_vibrato) * math::one_pole_coeff(0.1, dt);
+            self.state.theremin_vibrato +=
+                (vib - self.state.theremin_vibrato) * math::one_pole_coeff(0.1, dt);
         } else {
             // one-handed theremin: right hand only, volume follows filter hand height too
             if r.present {
                 let h = ((cal.bottom_y - r.wrist[1]) / span).clamp(0.0, 1.0);
                 let vol = libm::powf(h.max(0.35), 1.2);
-                self.volume_raw += (vol - self.volume_raw) * math::one_pole_coeff(self.cfg.volume_tc, dt);
+                self.volume_raw +=
+                    (vol - self.volume_raw) * math::one_pole_coeff(self.cfg.volume_tc, dt);
             }
         }
         self.state.theremin = true;
@@ -817,8 +908,13 @@ impl GestureParser {
         }
         // param events (for MIDI CC / renderer), only on meaningful change
         let (c, v, p) = self.last_params;
-        if (s.cutoff - c).abs() > 0.005 || (s.volume - v).abs() > 0.005 || (s.pan - p).abs() > 0.01 {
-            self.events.push(Event::ParamChange { cutoff: s.cutoff, volume: s.volume, pan: s.pan });
+        if (s.cutoff - c).abs() > 0.005 || (s.volume - v).abs() > 0.005 || (s.pan - p).abs() > 0.01
+        {
+            self.events.push(Event::ParamChange {
+                cutoff: s.cutoff,
+                volume: s.volume,
+                pan: s.pan,
+            });
             self.last_params = (s.cutoff, s.volume, s.pan);
         }
     }
@@ -827,17 +923,32 @@ impl GestureParser {
 /// Synthetic hand poses for tests and the tutorial/onboarding diagrams.
 /// Produces a plausible 21-landmark right hand in frame coordinates, palm facing
 /// the camera, wrist at (cx, cy). `fingers` = [thumb, index, middle, ring, pinky].
-pub fn synth_hand(cx: f32, cy: f32, palm: f32, fingers: [bool; 5], tilt_deg: f32, handedness: Handedness) -> HandFrame {
+pub fn synth_hand(
+    cx: f32,
+    cy: f32,
+    palm: f32,
+    fingers: [bool; 5],
+    tilt_deg: f32,
+    handedness: Handedness,
+) -> HandFrame {
     let mut p = [[0.0f32; 3]; 21];
     // side multiplier: thumb side. In a raw (non-mirrored) frame the user's right
     // hand shows its thumb toward +x (toward the body centre on the image's right).
-    let side = if handedness == Handedness::Right { 1.0 } else { -1.0 };
+    let side = if handedness == Handedness::Right {
+        1.0
+    } else {
+        -1.0
+    };
     p[0] = [cx, cy, 0.0];
     // MCP row (index..pinky), fanned from thumb side to pinky side, one palm up
     let mcp_x = [0.35, 0.12, -0.12, -0.35];
     let mcp_idx = [5usize, 9, 13, 17];
     for (k, &i) in mcp_idx.iter().enumerate() {
-        p[i] = [cx + side * mcp_x[k] * palm, cy - palm * (1.0 - 0.08 * k as f32), 0.0];
+        p[i] = [
+            cx + side * mcp_x[k] * palm,
+            cy - palm * (1.0 - 0.08 * k as f32),
+            0.0,
+        ];
     }
     // finger segments
     let fing = [(5usize, 1usize), (9, 2), (13, 3), (17, 4)];
@@ -852,7 +963,11 @@ pub fn synth_hand(cx: f32, cy: f32, palm: f32, fingers: [bool; 5], tilt_deg: f32
             } else {
                 // curled: fold down toward the palm
                 let ang = 0.9 * j as f32;
-                p[idx] = [base[0], base[1] - seg * libm::cosf(ang) * (1.0 - 0.25 * j as f32), 0.02 * j as f32];
+                p[idx] = [
+                    base[0],
+                    base[1] - seg * libm::cosf(ang) * (1.0 - 0.25 * j as f32),
+                    0.02 * j as f32,
+                ];
             }
         }
     }
@@ -862,14 +977,22 @@ pub fn synth_hand(cx: f32, cy: f32, palm: f32, fingers: [bool; 5], tilt_deg: f32
     if fingers[0] {
         // stuck out sideways
         for j in 2..=4 {
-            p[j] = [cmc[0] + side * 0.3 * palm * (j - 1) as f32, cmc[1] - 0.12 * palm * (j - 1) as f32, 0.0];
+            p[j] = [
+                cmc[0] + side * 0.3 * palm * (j - 1) as f32,
+                cmc[1] - 0.12 * palm * (j - 1) as f32,
+                0.0,
+            ];
         }
     } else {
         // relaxed: resting beside the index finger, about 0.7 palm from the middle MCP
         // (a real relaxed thumb; "thumb in" needs < 0.55 palm and is a deliberate fold)
         for j in 2..=4 {
             let t = (j - 1) as f32 / 3.0;
-            p[j] = [cmc[0] + side * 0.22 * palm * t, cmc[1] - 0.3 * palm * t, 0.01];
+            p[j] = [
+                cmc[0] + side * 0.22 * palm * t,
+                cmc[1] - 0.3 * palm * t,
+                0.01,
+            ];
         }
     }
     // apply tilt: rotate about the vertical axis through the wrist, so x mixes into z
@@ -883,7 +1006,11 @@ pub fn synth_hand(cx: f32, cy: f32, palm: f32, fingers: [bool; 5], tilt_deg: f32
         q[0] = cx + nx;
         q[2] = nz;
     }
-    HandFrame { landmarks: p, handedness, confidence: 0.95 }
+    HandFrame {
+        landmarks: p,
+        handedness,
+        confidence: 0.95,
+    }
 }
 
 #[cfg(test)]
@@ -919,7 +1046,15 @@ mod tests {
     #[test]
     fn finger_detection_on_synthetic_hands() {
         let mut p = GestureParser::default();
-        let t = run(&mut p, &[left([false, true, false, false, false], 20.0), right([false, true, true, false, false], 0.0, 0.3)], 6, 0.0);
+        let t = run(
+            &mut p,
+            &[
+                left([false, true, false, false, false], 20.0),
+                right([false, true, true, false, false], 0.0, 0.3),
+            ],
+            6,
+            0.0,
+        );
         assert_eq!(p.left_info().fingers, [false, true, false, false, false]);
         assert_eq!(p.right_info().fingers[1..], [true, true, false, false]);
         assert!(p.left_info().tilt > 8.0, "tilt {}", p.left_info().tilt);
@@ -953,26 +1088,53 @@ mod tests {
     fn fist_mutes_and_minor_tilt() {
         let mut p = GestureParser::default();
         let r = right([false, true, false, false, false], 0.0, 0.4);
-        run(&mut p, &[left([false, true, true, true, false], -25.0), r], 6, 0.0);
+        run(
+            &mut p,
+            &[left([false, true, true, true, false], -25.0), r],
+            6,
+            0.0,
+        );
         assert_eq!(p.state().degree, 3);
         assert_eq!(p.state().quality, Quality::Minor);
-        run(&mut p, &[left([false, false, false, false, false], -25.0), r], 6, 300.0);
+        run(
+            &mut p,
+            &[left([false, false, false, false, false], -25.0), r],
+            6,
+            300.0,
+        );
         assert_eq!(p.state().degree, 0);
         assert!(!p.state().has_chord());
-        assert!(p.events().iter().any(|e| matches!(e, Event::ChordOff)) || p.state().note_count == 0);
+        assert!(
+            p.events().iter().any(|e| matches!(e, Event::ChordOff)) || p.state().note_count == 0
+        );
     }
 
     #[test]
     fn right_hand_shapes_and_octave() {
         let mut p = GestureParser::default();
         let l = left([false, true, false, false, false], 20.0);
-        run(&mut p, &[l, right([false, true, true, true, false], 0.0, 0.4)], 6, 0.0);
+        run(
+            &mut p,
+            &[l, right([false, true, true, true, false], 0.0, 0.4)],
+            6,
+            0.0,
+        );
         assert_eq!(p.state().shape, Shape::Seventh);
-        run(&mut p, &[l, right([false, true, true, true, true], 0.0, 0.4)], 6, 300.0);
+        run(
+            &mut p,
+            &[l, right([false, true, true, true, true], 0.0, 0.4)],
+            6,
+            300.0,
+        );
         assert_eq!(p.state().shape, Shape::DomOrDim7);
         assert_eq!(p.state().chord_name(VoicingSettings::default()), "I dom7");
         // thumb out -> octave +1
-        run(&mut p, &[l, right([true, true, true, true, true], 0.0, 0.4)], 6, 600.0);
+        run(
+            &mut p,
+            &[l, right([true, true, true, true, true], 0.0, 0.4)],
+            6,
+            600.0,
+        );
         assert_eq!(p.state().octave, 1);
     }
 
@@ -980,14 +1142,34 @@ mod tests {
     fn height_controls_volume_and_tilt_controls_cutoff() {
         let mut p = GestureParser::default();
         let l = left([false, true, false, false, false], 20.0);
-        run(&mut p, &[l, right([false, true, false, false, false], 0.0, 0.2)], 20, 0.0);
+        run(
+            &mut p,
+            &[l, right([false, true, false, false, false], 0.0, 0.2)],
+            20,
+            0.0,
+        );
         let high = p.state().volume;
-        run(&mut p, &[l, right([false, true, false, false, false], 0.0, 0.8)], 30, 1000.0);
+        run(
+            &mut p,
+            &[l, right([false, true, false, false, false], 0.0, 0.8)],
+            30,
+            1000.0,
+        );
         let low = p.state().volume;
         assert!(high > 0.7 && low < 0.15, "high {high} low {low}");
-        run(&mut p, &[l, right([false, true, false, false, false], 40.0, 0.5)], 30, 3000.0);
+        run(
+            &mut p,
+            &[l, right([false, true, false, false, false], 40.0, 0.5)],
+            30,
+            3000.0,
+        );
         assert!(p.state().cutoff > 0.85, "cutoff {}", p.state().cutoff);
-        run(&mut p, &[l, right([false, true, false, false, false], -40.0, 0.5)], 30, 5000.0);
+        run(
+            &mut p,
+            &[l, right([false, true, false, false, false], -40.0, 0.5)],
+            30,
+            5000.0,
+        );
         assert!(p.state().cutoff < 0.15, "cutoff {}", p.state().cutoff);
     }
 
@@ -1008,20 +1190,41 @@ mod tests {
 
     #[test]
     fn scale_only_scheme_uses_diatonic_quality() {
-        let mut p = GestureParser::new(ParserConfig { left: LeftScheme::ScaleOnly, ..Default::default() });
+        let mut p = GestureParser::new(ParserConfig {
+            left: LeftScheme::ScaleOnly,
+            ..Default::default()
+        });
         let r = right([false, true, false, false, false], 0.0, 0.3);
-        run(&mut p, &[left([false, true, true, false, false], 30.0), r], 6, 0.0);
+        run(
+            &mut p,
+            &[left([false, true, true, false, false], 30.0), r],
+            6,
+            0.0,
+        );
         assert_eq!(p.state().degree, 2);
         assert_eq!(p.state().quality, Quality::Minor);
-        run(&mut p, &[left([true, true, false, false, true], 30.0), r], 6, 300.0);
+        run(
+            &mut p,
+            &[left([true, true, false, false, true], 30.0), r],
+            6,
+            300.0,
+        );
         assert_eq!(p.state().degree, 7);
         assert_eq!(p.state().quality, Quality::Diminished);
     }
 
     #[test]
     fn fixed_degree_ignores_left_hand() {
-        let mut p = GestureParser::new(ParserConfig { left: LeftScheme::FixedDegree { degree: 4 }, ..Default::default() });
-        run(&mut p, &[right([false, true, false, false, false], 0.0, 0.3)], 6, 0.0);
+        let mut p = GestureParser::new(ParserConfig {
+            left: LeftScheme::FixedDegree { degree: 4 },
+            ..Default::default()
+        });
+        run(
+            &mut p,
+            &[right([false, true, false, false, false], 0.0, 0.3)],
+            6,
+            0.0,
+        );
         assert_eq!(p.state().degree, 4);
         assert!(p.state().has_chord());
         p.set_fixed_degree(5);
@@ -1030,11 +1233,24 @@ mod tests {
 
     #[test]
     fn theremin_mode_pitch_follows_height() {
-        let mut p = GestureParser::new(ParserConfig { mode: PlayMode::Theremin, ..Default::default() });
+        let mut p = GestureParser::new(ParserConfig {
+            mode: PlayMode::Theremin,
+            ..Default::default()
+        });
         let l = left([false, true, true, true, true], 0.0);
-        run(&mut p, &[l, right([false, true, true, true, true], 0.0, 0.8)], 40, 0.0);
+        run(
+            &mut p,
+            &[l, right([false, true, true, true, true], 0.0, 0.8)],
+            40,
+            0.0,
+        );
         let low = p.state().theremin_pitch_hz;
-        run(&mut p, &[l, right([false, true, true, true, true], 0.0, 0.2)], 40, 2000.0);
+        run(
+            &mut p,
+            &[l, right([false, true, true, true, true], 0.0, 0.2)],
+            40,
+            2000.0,
+        );
         let high = p.state().theremin_pitch_hz;
         assert!(high > low * 2.5, "low {low} high {high}");
         assert!(p.state().theremin);
@@ -1046,14 +1262,23 @@ mod tests {
         let mut p = GestureParser::default();
         p.step_key_fifths(1);
         assert_eq!(p.state().key, PitchClass::G);
-        assert!(p.events().iter().any(|e| matches!(e, Event::KeyChange { key: PitchClass::G, .. })));
+        assert!(p.events().iter().any(|e| matches!(
+            e,
+            Event::KeyChange {
+                key: PitchClass::G,
+                ..
+            }
+        )));
         p.set_key(PitchClass::D, Mode::Minor);
         assert_eq!(p.state().mode, Mode::Minor);
     }
 
     #[test]
     fn latch_after_holding_still() {
-        let mut p = GestureParser::new(ParserConfig { latch_hold_ms: 500.0, ..Default::default() });
+        let mut p = GestureParser::new(ParserConfig {
+            latch_hold_ms: 500.0,
+            ..Default::default()
+        });
         let l = left([false, true, false, false, false], 20.0);
         let r = right([false, true, false, false, false], 0.0, 0.3);
         run(&mut p, &[l, r], 40, 0.0); // 1.3 s perfectly still
@@ -1062,7 +1287,12 @@ mod tests {
         run(&mut p, &[l.clone(), r][..0], 90, 2000.0);
         assert!(p.state().volume > 0.5);
         // new shape unlatches
-        run(&mut p, &[left([false, true, true, false, false], 20.0), r], 6, 6000.0);
+        run(
+            &mut p,
+            &[left([false, true, true, false, false], 20.0), r],
+            6,
+            6000.0,
+        );
         assert!(!p.state().latched);
     }
 }

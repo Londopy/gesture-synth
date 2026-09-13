@@ -24,7 +24,8 @@ fn main() {
         "aarch64-apple-darwin" => "aarch64-macos",
         other => panic!("gsyn-zig: no zig target mapping for {other}"),
     };
-    let src = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap()).join("../gsyn-zig/src/kernel.zig");
+    let src =
+        PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap()).join("../gsyn-zig/src/kernel.zig");
     let lib_path = out.join(lib_name(&target));
     let mut cmd = Command::new(&zig);
     cmd.arg("build-lib")
@@ -36,7 +37,9 @@ fn main() {
         .arg("-target")
         .arg(zig_target)
         .arg(format!("-femit-bin={}", lib_path.display()));
-    let status = cmd.status().unwrap_or_else(|e| panic!("failed to run {zig}: {e}"));
+    let status = cmd
+        .status()
+        .unwrap_or_else(|e| panic!("failed to run {zig}: {e}"));
     assert!(status.success(), "zig build-lib failed for {zig_target}");
     println!("cargo:rustc-link-search=native={}", out.display());
     println!("cargo:rustc-link-lib=static=gsynkernel");

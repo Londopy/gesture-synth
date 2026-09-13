@@ -1,0 +1,80 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  desktop:
+    name: Desktop bundles
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            args: ""
+          - os: macos-latest
+            args: "--target universal-apple-darwin"
+          - os: ubuntu-latest
+            args: ""
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown${{ matrix.os == 'macos-latest' && ',aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Linux prerequisites
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libasound2-dev ffmpeg
+      - name: ffmpeg (macOS)
+        if: matrix.os == 'macos-latest'
+        run: brew install ffmpeg
+      - name: ffmpeg (Windows)
+        if: matrix.os == 'windows-latest'
+        run: choco install ffmpeg -y --no-progress
+      - run: npm ci --ignore-scripts
+      - run: node scripts/fetch-models.mjs
+      - name: ffmpeg sidecar
+        run: node scripts/fetch-ffmpeg.mjs
+        continue-on-error: true
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: Gesture Synth ${{ github.ref_name }}
+          releaseBody: See CHANGELOG.md for details.
+          releaseDraft: true
+          args: ${{ matrix.args }}
+
+  web:
+    name: Web build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: node scripts/fetch-models.mjs
+      - run: npm run build
+      - name: Zip
+        run: cd app/dist && zip -r ../../gesture-synth-web-${{ github.ref_name }}.zip .
+      - uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          files: gesture-synth-web-*.zip

@@ -58,14 +58,19 @@ impl WasmParser {
     #[wasm_bindgen(constructor)]
     pub fn new(config_json: Option<String>) -> Result<WasmParser, JsValue> {
         let cfg = match config_json {
-            Some(j) => serde_json::from_str::<ParserConfig>(&j).map_err(|e| JsValue::from_str(&e.to_string()))?,
+            Some(j) => serde_json::from_str::<ParserConfig>(&j)
+                .map_err(|e| JsValue::from_str(&e.to_string()))?,
             None => ParserConfig::default(),
         };
-        Ok(Self { inner: GestureParser::new(cfg), hands: Vec::with_capacity(2) })
+        Ok(Self {
+            inner: GestureParser::new(cfg),
+            hands: Vec::with_capacity(2),
+        })
     }
 
     pub fn set_config(&mut self, config_json: &str) -> Result<(), JsValue> {
-        let cfg: ParserConfig = serde_json::from_str(config_json).map_err(|e| JsValue::from_str(&e.to_string()))?;
+        let cfg: ParserConfig =
+            serde_json::from_str(config_json).map_err(|e| JsValue::from_str(&e.to_string()))?;
         self.inner.set_config(cfg);
         Ok(())
     }
@@ -78,7 +83,10 @@ impl WasmParser {
     /// `handedness`: per hand 0 = tracker says Left, 1 = Right; `confidence` per hand.
     pub fn feed(&mut self, landmarks: &[f32], handedness: &[u8], confidence: &[f32], t_ms: f64) {
         self.hands.clear();
-        let n = (landmarks.len() / 63).min(handedness.len()).min(confidence.len()).min(2);
+        let n = (landmarks.len() / 63)
+            .min(handedness.len())
+            .min(confidence.len())
+            .min(2);
         for h in 0..n {
             let mut lm = [[0f32; 3]; 21];
             for i in 0..21 {
@@ -87,7 +95,11 @@ impl WasmParser {
             }
             self.hands.push(HandFrame {
                 landmarks: lm,
-                handedness: if handedness[h] == 0 { Handedness::Left } else { Handedness::Right },
+                handedness: if handedness[h] == 0 {
+                    Handedness::Left
+                } else {
+                    Handedness::Right
+                },
                 confidence: confidence[h],
             });
         }
@@ -125,7 +137,8 @@ impl WasmParser {
     }
 
     pub fn hands_json(&self) -> String {
-        serde_json::to_string(&(self.inner.left_info(), self.inner.right_info())).unwrap_or_default()
+        serde_json::to_string(&(self.inner.left_info(), self.inner.right_info()))
+            .unwrap_or_default()
     }
 
     pub fn chord_name(&self) -> String {
@@ -135,14 +148,24 @@ impl WasmParser {
     pub fn absolute_chord_name(&self) -> String {
         let s = self.inner.state();
         if s.has_chord() {
-            music::absolute_chord_name(s.key, s.mode, s.degree, s.quality, s.shape, self.inner.cfg.voicing)
+            music::absolute_chord_name(
+                s.key,
+                s.mode,
+                s.degree,
+                s.quality,
+                s.shape,
+                self.inner.cfg.voicing,
+            )
         } else {
             String::new()
         }
     }
 
     pub fn set_key(&mut self, key_index: i32, minor: bool) {
-        self.inner.set_key(PitchClass::from_index(key_index), if minor { Mode::Minor } else { Mode::Major });
+        self.inner.set_key(
+            PitchClass::from_index(key_index),
+            if minor { Mode::Minor } else { Mode::Major },
+        );
     }
 
     pub fn step_key(&mut self, n: i32) {
@@ -176,7 +199,10 @@ pub struct WasmEngine {
 impl WasmEngine {
     #[wasm_bindgen(constructor)]
     pub fn new(sample_rate: f32) -> WasmEngine {
-        Self { inner: Engine::new(sample_rate), events: Vec::with_capacity(32) }
+        Self {
+            inner: Engine::new(sample_rate),
+            events: Vec::with_capacity(32),
+        }
     }
 
     /// Latest live state (STATE_FLOATS) and events (n * EVENT_FLOATS).
@@ -199,7 +225,8 @@ impl WasmEngine {
     }
 
     pub fn command(&mut self, cmd_json: &str) -> Result<(), JsValue> {
-        let cmd: EngineCommand = serde_json::from_str(cmd_json).map_err(|e| JsValue::from_str(&e.to_string()))?;
+        let cmd: EngineCommand =
+            serde_json::from_str(cmd_json).map_err(|e| JsValue::from_str(&e.to_string()))?;
         self.inner.command(cmd);
         Ok(())
     }
@@ -277,14 +304,20 @@ impl WasmEngine {
         v
     }
 
-    pub fn set_track_instrument(&mut self, track: usize, instrument_json: &str) -> Result<(), JsValue> {
-        let inst: Instrument = serde_json::from_str(instrument_json).map_err(|e| JsValue::from_str(&e.to_string()))?;
+    pub fn set_track_instrument(
+        &mut self,
+        track: usize,
+        instrument_json: &str,
+    ) -> Result<(), JsValue> {
+        let inst: Instrument =
+            serde_json::from_str(instrument_json).map_err(|e| JsValue::from_str(&e.to_string()))?;
         self.inner.set_track_instrument(track, inst);
         Ok(())
     }
 
     pub fn set_theremin_instrument(&mut self, instrument_json: &str) -> Result<(), JsValue> {
-        let inst: Instrument = serde_json::from_str(instrument_json).map_err(|e| JsValue::from_str(&e.to_string()))?;
+        let inst: Instrument =
+            serde_json::from_str(instrument_json).map_err(|e| JsValue::from_str(&e.to_string()))?;
         self.inner.set_theremin_instrument(inst);
         Ok(())
     }
@@ -320,7 +353,15 @@ impl WasmEngine {
     }
 
     /// Replace the chord at a grid cell.
-    pub fn replace_chord(&mut self, track: usize, step: usize, degree: u8, quality: u8, shape: u8, octave: i8) {
+    pub fn replace_chord(
+        &mut self,
+        track: usize,
+        step: usize,
+        degree: u8,
+        quality: u8,
+        shape: u8,
+        octave: i8,
+    ) {
         let quality = match quality {
             1 => Quality::Minor,
             2 => Quality::Diminished,
@@ -332,11 +373,23 @@ impl WasmEngine {
             3 => Shape::DomOrDim7,
             _ => Shape::Root,
         };
-        let mut st = MusicalState { key: self.inner.key, mode: self.inner.mode, degree, quality, shape, octave, ..Default::default() };
+        let mut st = MusicalState {
+            key: self.inner.key,
+            mode: self.inner.mode,
+            degree,
+            quality,
+            shape,
+            octave,
+            ..Default::default()
+        };
         st.derive_notes(VoicingSettings::default());
         let t = track.min(3);
         let transport = self.inner.transport;
-        self.inner.looper.tracks[t].replace_chord_at_step(step, &transport, Event::chord_on_from(&st));
+        self.inner.looper.tracks[t].replace_chord_at_step(
+            step,
+            &transport,
+            Event::chord_on_from(&st),
+        );
         self.inner.looper.mark_dirty(t);
     }
 
@@ -374,10 +427,17 @@ impl WasmEngine {
         let t = track.min(3);
         self.inner.command(EngineCommand::SetBpm { bpm: song.bpm });
         if let Some(sig) = gsyn_core::transport::TimeSig::parse(&song.time_sig) {
-            self.inner.command(EngineCommand::SetTimeSig { beats: sig.beats, unit: sig.unit });
+            self.inner.command(EngineCommand::SetTimeSig {
+                beats: sig.beats,
+                unit: sig.unit,
+            });
         }
-        self.inner.command(EngineCommand::SetBars { bars: song.bars });
-        self.inner.command(EngineCommand::SetKey { key: song.key, mode: song.mode });
+        self.inner
+            .command(EngineCommand::SetBars { bars: song.bars });
+        self.inner.command(EngineCommand::SetKey {
+            key: song.key,
+            mode: song.mode,
+        });
         let mut tr = song.to_track(t, VoicingSettings::default());
         tr.midi_ch = self.inner.looper.tracks[t].midi_ch;
         let inst = tr.instrument.clone();
@@ -394,7 +454,8 @@ impl WasmEngine {
     }
 
     pub fn track_landmarks_json(&self, track: usize) -> String {
-        serde_json::to_string(&self.inner.looper.tracks[track.min(3)].landmarks15hz).unwrap_or_default()
+        serde_json::to_string(&self.inner.looper.tracks[track.min(3)].landmarks15hz)
+            .unwrap_or_default()
     }
 
     pub fn key_index(&self) -> i32 {
@@ -436,8 +497,21 @@ pub fn render_midi(session_json: &str) -> Result<Vec<u8>, JsValue> {
 
 /// Parse a typed progression into song chords (JSON array).
 #[wasm_bindgen]
-pub fn parse_progression(text: &str, key_index: i32, minor: bool, beats_per_bar: u8, chords_per_bar: u8) -> Result<String, JsValue> {
-    let chords = SongFile::parse_progression(text, PitchClass::from_index(key_index), if minor { Mode::Minor } else { Mode::Major }, beats_per_bar, chords_per_bar).map_err(|e| JsValue::from_str(&e))?;
+pub fn parse_progression(
+    text: &str,
+    key_index: i32,
+    minor: bool,
+    beats_per_bar: u8,
+    chords_per_bar: u8,
+) -> Result<String, JsValue> {
+    let chords = SongFile::parse_progression(
+        text,
+        PitchClass::from_index(key_index),
+        if minor { Mode::Minor } else { Mode::Major },
+        beats_per_bar,
+        chords_per_bar,
+    )
+    .map_err(|e| JsValue::from_str(&e))?;
     Ok(serde_json::to_string(&chords).unwrap_or_default())
 }
 
@@ -468,7 +542,14 @@ pub fn chord_name(degree: u8, quality: u8, shape: u8) -> String {
 }
 
 #[wasm_bindgen]
-pub fn chord_notes(key_index: i32, minor: bool, degree: u8, quality: u8, shape: u8, octave: i8) -> Vec<u8> {
+pub fn chord_notes(
+    key_index: i32,
+    minor: bool,
+    degree: u8,
+    quality: u8,
+    shape: u8,
+    octave: i8,
+) -> Vec<u8> {
     let q = match quality {
         1 => Quality::Minor,
         2 => Quality::Diminished,
@@ -480,7 +561,15 @@ pub fn chord_notes(key_index: i32, minor: bool, degree: u8, quality: u8, shape: 
         3 => Shape::DomOrDim7,
         _ => Shape::Root,
     };
-    let (n, c) = music::chord_notes(PitchClass::from_index(key_index), if minor { Mode::Minor } else { Mode::Major }, degree, q, s, octave, VoicingSettings::default());
+    let (n, c) = music::chord_notes(
+        PitchClass::from_index(key_index),
+        if minor { Mode::Minor } else { Mode::Major },
+        degree,
+        q,
+        s,
+        octave,
+        VoicingSettings::default(),
+    );
     n[..c as usize].to_vec()
 }
 
@@ -521,8 +610,32 @@ pub fn default_parser_config_json() -> String {
 /// Synthetic hand landmarks (63 floats) for tutorial diagrams and the tour.
 /// fingers bitmask: bit0 thumb .. bit4 pinky. `right` selects the hand.
 #[wasm_bindgen]
-pub fn synth_hand_landmarks(cx: f32, cy: f32, palm: f32, fingers: u8, tilt_deg: f32, right: bool) -> Vec<f32> {
-    let f = [fingers & 1 != 0, fingers & 2 != 0, fingers & 4 != 0, fingers & 8 != 0, fingers & 16 != 0];
-    let h = synth_hand(cx, cy, palm, f, tilt_deg, if right { Handedness::Right } else { Handedness::Left });
+pub fn synth_hand_landmarks(
+    cx: f32,
+    cy: f32,
+    palm: f32,
+    fingers: u8,
+    tilt_deg: f32,
+    right: bool,
+) -> Vec<f32> {
+    let f = [
+        fingers & 1 != 0,
+        fingers & 2 != 0,
+        fingers & 4 != 0,
+        fingers & 8 != 0,
+        fingers & 16 != 0,
+    ];
+    let h = synth_hand(
+        cx,
+        cy,
+        palm,
+        f,
+        tilt_deg,
+        if right {
+            Handedness::Right
+        } else {
+            Handedness::Left
+        },
+    );
     h.landmarks.iter().flat_map(|p| p.iter().copied()).collect()
 }

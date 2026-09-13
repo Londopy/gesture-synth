@@ -96,7 +96,11 @@ impl Curve {
         let t0 = self.points[0].t as f64;
         let t1 = self.points[n - 1].t as f64;
         let tscale = if t1 > t0 { 1.0 / (t1 - t0) } else { 1.0 };
-        let pts: Vec<(f64, f64)> = self.points.iter().map(|p| ((p.t as f64 - t0) * tscale, p.v as f64)).collect();
+        let pts: Vec<(f64, f64)> = self
+            .points
+            .iter()
+            .map(|p| ((p.t as f64 - t0) * tscale, p.v as f64))
+            .collect();
         let mut keep = vec![false; n];
         keep[0] = true;
         keep[n - 1] = true;
@@ -172,7 +176,11 @@ pub struct CurveRecorder {
 
 impl CurveRecorder {
     pub fn new(sample_rate: f32) -> Self {
-        Self { curve: Curve::new(), next_t: 0, interval: (sample_rate / CURVE_HZ).max(1.0) as u64 }
+        Self {
+            curve: Curve::new(),
+            next_t: 0,
+            interval: (sample_rate / CURVE_HZ).max(1.0) as u64,
+        }
     }
 
     pub fn reset(&mut self) {
@@ -223,7 +231,11 @@ mod tests {
         assert_eq!(c.points.len(), 2);
         let mut c = Curve::new();
         for i in 0..=100u64 {
-            let v = if i < 50 { i as f32 / 50.0 } else { 1.0 - (i - 50) as f32 / 50.0 };
+            let v = if i < 50 {
+                i as f32 / 50.0
+            } else {
+                1.0 - (i - 50) as f32 / 50.0
+            };
             c.push(i * 10, v);
         }
         c.simplify(0.01);

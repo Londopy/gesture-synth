@@ -1,0 +1,20 @@
+name: Feature request
+description: A gesture, visual, instrument, page or format idea
+labels: [enhancement]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: The idea
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why it matters when playing
+      description: How does it make the instrument feel better, or the performance look better?
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options: [Gestures, Synth / audio, Loop pedal, Visuals, Learn / Song Builder, Community, Desktop shell, Web / PWA, Formats]

@@ -22,7 +22,11 @@ pub struct TransportSettings {
 
 impl TransportSettings {
     pub fn from_transport(t: &Transport) -> Self {
-        Self { bpm: t.bpm, time_sig: t.sig.label(), bars: t.bars }
+        Self {
+            bpm: t.bpm,
+            time_sig: t.sig.label(),
+            bars: t.bars,
+        }
     }
 
     pub fn apply(&self, t: &mut Transport) {
@@ -78,7 +82,10 @@ impl SessionFile {
     pub fn from_json(s: &str) -> Result<Self, String> {
         let mut f: SessionFile = serde_json::from_str(s).map_err(|e| e.to_string())?;
         if f.version > FORMAT_VERSION {
-            return Err(format!("session version {} is newer than this app ({})", f.version, FORMAT_VERSION));
+            return Err(format!(
+                "session version {} is newer than this app ({})",
+                f.version, FORMAT_VERSION
+            ));
         }
         f.tracks.truncate(TRACKS);
         Ok(f)
@@ -190,14 +197,29 @@ impl SongFile {
         let mut chords = self.chords.clone();
         chords.sort_by(|a, b| (a.bar, a.beat).partial_cmp(&(b.bar, b.beat)).unwrap());
         for c in &chords {
-            let start_beats = (c.bar as f64 - 1.0) * self.sig_beats() as f64 + (c.beat as f64 - 1.0);
+            let start_beats =
+                (c.bar as f64 - 1.0) * self.sig_beats() as f64 + (c.beat as f64 - 1.0);
             let t_on = (start_beats * spb).round() as u64;
             let t_off = ((start_beats + c.dur_beats as f64) * spb).round() as u64;
-            let mut st = MusicalState { key: self.key, mode: self.mode, degree: c.degree, quality: c.quality, shape: c.shape, octave: c.octave, ..Default::default() };
+            let mut st = MusicalState {
+                key: self.key,
+                mode: self.mode,
+                degree: c.degree,
+                quality: c.quality,
+                shape: c.shape,
+                octave: c.octave,
+                ..Default::default()
+            };
             st.derive_notes(voicing);
-            evs.push(TimedEvent { t: t_on, event: Event::chord_on_from(&st) });
+            evs.push(TimedEvent {
+                t: t_on,
+                event: Event::chord_on_from(&st),
+            });
             if t_off < t.loop_len() {
-                evs.push(TimedEvent { t: t_off, event: Event::ChordOff });
+                evs.push(TimedEvent {
+                    t: t_off,
+                    event: Event::ChordOff,
+                });
             }
         }
         evs.sort_by_key(|e| e.t);
@@ -221,15 +243,33 @@ impl SongFile {
 
     /// Parse a progression typed as roman numerals or absolute chords, one chord
     /// per bar by default ("I V vi IV", "C G Am F", "ii7 V7 Imaj7"). Returns chords.
-    pub fn parse_progression(text: &str, key: PitchClass, mode: Mode, beats_per_bar: u8, chords_per_bar: u8) -> Result<Vec<SongChord>, String> {
+    pub fn parse_progression(
+        text: &str,
+        key: PitchClass,
+        mode: Mode,
+        beats_per_bar: u8,
+        chords_per_bar: u8,
+    ) -> Result<Vec<SongChord>, String> {
         let cpb = chords_per_bar.max(1) as f32;
         let dur = beats_per_bar as f32 / cpb;
         let mut out = Vec::new();
-        for (i, tok) in text.split(|c: char| c.is_whitespace() || c == '|' || c == ',' || c == '-').filter(|t| !t.is_empty()).enumerate() {
+        for (i, tok) in text
+            .split(|c: char| c.is_whitespace() || c == '|' || c == ',' || c == '-')
+            .filter(|t| !t.is_empty())
+            .enumerate()
+        {
             let (degree, quality, shape) = parse_chord_token(tok, key, mode)?;
             let bar = (i as f32 / cpb).floor() as u32 + 1;
             let beat = (i as f32 % cpb) * dur + 1.0;
-            out.push(SongChord { bar, beat, degree, quality, shape, octave: 0, dur_beats: dur });
+            out.push(SongChord {
+                bar,
+                beat,
+                degree,
+                quality,
+                shape,
+                octave: 0,
+                dur_beats: dur,
+            });
         }
         Ok(out)
     }
@@ -237,7 +277,11 @@ impl SongFile {
 
 /// Parse one chord token: roman ("IV", "ii", "V7", "IVmaj7", "vii°", "viio") or
 /// absolute ("F", "Dm", "G7", "Cmaj7", "Bdim").
-pub fn parse_chord_token(tok: &str, key: PitchClass, mode: Mode) -> Result<(u8, Quality, Shape), String> {
+pub fn parse_chord_token(
+    tok: &str,
+    key: PitchClass,
+    mode: Mode,
+) -> Result<(u8, Quality, Shape), String> {
     let t = tok.trim();
     let romans = ["vii", "iii", "vi", "iv", "ii", "v", "i"];
     let lower = t.to_ascii_lowercase();
@@ -254,7 +298,11 @@ pub fn parse_chord_token(tok: &str, key: PitchClass, mode: Mode) -> Result<(u8, 
                 "vi" => 6,
                 _ => 7,
             };
-            let mut quality = if is_upper { Quality::Major } else { Quality::Minor };
+            let mut quality = if is_upper {
+                Quality::Major
+            } else {
+                Quality::Minor
+            };
             let (shape, q2) = parse_suffix(rest, quality)?;
             if let Some(q) = q2 {
                 quality = q;
@@ -263,21 +311,32 @@ pub fn parse_chord_token(tok: &str, key: PitchClass, mode: Mode) -> Result<(u8, 
         }
     }
     // absolute
-    let root_len = if t.len() >= 2 && matches!(&t[1..2], "#" | "b") { 2 } else { 1 };
-    let root = PitchClass::parse(&t[..root_len.min(t.len())]).ok_or_else(|| format!("bad chord '{tok}'"))?;
-    let rest = &t[root_len.min(t.len())..];
-    let (rest, mut quality) = if let Some(r) = rest.strip_prefix('m').filter(|r| !r.starts_with("aj")) {
-        (r, Quality::Minor)
+    let root_len = if t.len() >= 2 && matches!(&t[1..2], "#" | "b") {
+        2
     } else {
-        (rest, Quality::Major)
+        1
     };
+    let root = PitchClass::parse(&t[..root_len.min(t.len())])
+        .ok_or_else(|| format!("bad chord '{tok}'"))?;
+    let rest = &t[root_len.min(t.len())..];
+    let (rest, mut quality) =
+        if let Some(r) = rest.strip_prefix('m').filter(|r| !r.starts_with("aj")) {
+            (r, Quality::Minor)
+        } else {
+            (rest, Quality::Major)
+        };
     let (shape, q2) = parse_suffix(rest, quality)?;
     if let Some(q) = q2 {
         quality = q;
     }
     // degree from root relative to key
     let semis = (root.index() as i32 - key.index() as i32).rem_euclid(12);
-    let degree = mode.scale().iter().position(|s| *s == semis).map(|d| d as u8 + 1).ok_or_else(|| format!("'{tok}' is not diatonic in {} {}", key.name(), mode.name()))?;
+    let degree = mode
+        .scale()
+        .iter()
+        .position(|s| *s == semis)
+        .map(|d| d as u8 + 1)
+        .ok_or_else(|| format!("'{tok}' is not diatonic in {} {}", key.name(), mode.name()))?;
     Ok((degree, quality, shape))
 }
 
@@ -288,7 +347,14 @@ fn parse_suffix(s: &str, q: Quality) -> Result<(Shape, Option<Quality>), String>
         "maj7" | "ma7" | "m7" if q == Quality::Major && s != "m7" => (Shape::Seventh, None),
         "m7" if q == Quality::Minor => (Shape::Seventh, None),
         "m7" => (Shape::Seventh, Some(Quality::Minor)),
-        "7" => (if q == Quality::Minor { Shape::Seventh } else { Shape::DomOrDim7 }, None),
+        "7" => (
+            if q == Quality::Minor {
+                Shape::Seventh
+            } else {
+                Shape::DomOrDim7
+            },
+            None,
+        ),
         "dom7" => (Shape::DomOrDim7, None),
         "m7b5" | "ø" | "ø7" => (Shape::Seventh, Some(Quality::Diminished)),
         "dim" | "°" | "o" => (Shape::Root, Some(Quality::Diminished)),
@@ -356,15 +422,33 @@ mod tests {
 
     #[test]
     fn song_to_track_and_parse() {
-        let chords = SongFile::parse_progression("I V vi IV", PitchClass::C, Mode::Major, 4, 1).unwrap();
+        let chords =
+            SongFile::parse_progression("I V vi IV", PitchClass::C, Mode::Major, 4, 1).unwrap();
         assert_eq!(chords.len(), 4);
         assert_eq!(chords[2].degree, 6);
         assert_eq!(chords[2].quality, Quality::Minor);
         assert_eq!(chords[3].bar, 4);
-        let song = SongFile { version: 1, name: "Test".into(), author: "me".into(), bpm: 120.0, time_sig: "4/4".into(), key: PitchClass::C, mode: Mode::Major, bars: 4, chords, hints: Default::default(), tags: vec![], instrument: Some("Pad".into()) };
+        let song = SongFile {
+            version: 1,
+            name: "Test".into(),
+            author: "me".into(),
+            bpm: 120.0,
+            time_sig: "4/4".into(),
+            key: PitchClass::C,
+            mode: Mode::Major,
+            bars: 4,
+            chords,
+            hints: Default::default(),
+            tags: vec![],
+            instrument: Some("Pad".into()),
+        };
         song.validate().unwrap();
         let track = song.to_track(0, VoicingSettings::default());
-        assert_eq!(track.events.len(), 4, "consecutive chords: offs merged into ons");
+        assert_eq!(
+            track.events.len(),
+            4,
+            "consecutive chords: offs merged into ons"
+        );
         assert_eq!(track.events[1].t, 96_000);
         let j = song.to_json();
         let back = SongFile::from_json(&j).unwrap();
@@ -373,13 +457,34 @@ mod tests {
 
     #[test]
     fn chord_tokens() {
-        assert_eq!(parse_chord_token("IVmaj7", PitchClass::C, Mode::Major).unwrap(), (4, Quality::Major, Shape::Seventh));
-        assert_eq!(parse_chord_token("V7", PitchClass::C, Mode::Major).unwrap(), (5, Quality::Major, Shape::DomOrDim7));
-        assert_eq!(parse_chord_token("ii7", PitchClass::C, Mode::Major).unwrap(), (2, Quality::Minor, Shape::Seventh));
-        assert_eq!(parse_chord_token("Am", PitchClass::C, Mode::Major).unwrap(), (6, Quality::Minor, Shape::Root));
-        assert_eq!(parse_chord_token("G7", PitchClass::C, Mode::Major).unwrap(), (5, Quality::Major, Shape::DomOrDim7));
-        assert_eq!(parse_chord_token("Bdim", PitchClass::C, Mode::Major).unwrap(), (7, Quality::Diminished, Shape::Root));
-        assert_eq!(parse_chord_token("Bb", PitchClass::F, Mode::Major).unwrap(), (4, Quality::Major, Shape::Root));
+        assert_eq!(
+            parse_chord_token("IVmaj7", PitchClass::C, Mode::Major).unwrap(),
+            (4, Quality::Major, Shape::Seventh)
+        );
+        assert_eq!(
+            parse_chord_token("V7", PitchClass::C, Mode::Major).unwrap(),
+            (5, Quality::Major, Shape::DomOrDim7)
+        );
+        assert_eq!(
+            parse_chord_token("ii7", PitchClass::C, Mode::Major).unwrap(),
+            (2, Quality::Minor, Shape::Seventh)
+        );
+        assert_eq!(
+            parse_chord_token("Am", PitchClass::C, Mode::Major).unwrap(),
+            (6, Quality::Minor, Shape::Root)
+        );
+        assert_eq!(
+            parse_chord_token("G7", PitchClass::C, Mode::Major).unwrap(),
+            (5, Quality::Major, Shape::DomOrDim7)
+        );
+        assert_eq!(
+            parse_chord_token("Bdim", PitchClass::C, Mode::Major).unwrap(),
+            (7, Quality::Diminished, Shape::Root)
+        );
+        assert_eq!(
+            parse_chord_token("Bb", PitchClass::F, Mode::Major).unwrap(),
+            (4, Quality::Major, Shape::Root)
+        );
         assert!(parse_chord_token("C#", PitchClass::C, Mode::Major).is_err());
     }
 }

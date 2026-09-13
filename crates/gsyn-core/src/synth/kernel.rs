@@ -158,7 +158,11 @@ pub mod reference {
             }
             2 => {
                 for s in out.iter_mut() {
-                    *s = if p < 0.5 { 4.0 * p - 1.0 } else { 3.0 - 4.0 * p };
+                    *s = if p < 0.5 {
+                        4.0 * p - 1.0
+                    } else {
+                        3.0 - 4.0 * p
+                    };
                     p += inc;
                     if p >= 1.0 {
                         p -= 1.0;
@@ -261,7 +265,9 @@ mod tests {
 
     #[test]
     fn svf_lowpass_attenuates_high_frequencies() {
-        let mut io: Vec<f32> = (0..1024).map(|i| if i % 2 == 0 { 1.0 } else { -1.0 }).collect();
+        let mut io: Vec<f32> = (0..1024)
+            .map(|i| if i % 2 == 0 { 1.0 } else { -1.0 })
+            .collect();
         let mut st = [0.0, 0.0];
         let g = (core::f32::consts::PI * 200.0 / 48000.0).tan();
         svf_lp_block(&mut io, &mut st, g, 1.5);

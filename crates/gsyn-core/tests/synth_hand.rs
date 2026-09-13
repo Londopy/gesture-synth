@@ -26,8 +26,18 @@ fn settle(p: &mut GestureParser, hands: &[HandFrame]) {
 #[test]
 fn relaxed_thumb_is_octave_neutral() {
     let mut p = GestureParser::default();
-    settle(&mut p, &[left([false, true, false, false, false], 20.0), right([false, true, false, false, false], 0.3)]);
-    assert_eq!(p.right_info().thumb, 0, "relaxed thumb must not read as folded");
+    settle(
+        &mut p,
+        &[
+            left([false, true, false, false, false], 20.0),
+            right([false, true, false, false, false], 0.3),
+        ],
+    );
+    assert_eq!(
+        p.right_info().thumb,
+        0,
+        "relaxed thumb must not read as folded"
+    );
     assert_eq!(p.state().octave, 0);
     assert_eq!(p.state().notes(), &[48, 52, 55], "I in C sits at C3");
 }
@@ -35,7 +45,13 @@ fn relaxed_thumb_is_octave_neutral() {
 #[test]
 fn thumb_out_raises_octave() {
     let mut p = GestureParser::default();
-    settle(&mut p, &[left([false, true, false, false, false], 20.0), right([true, true, false, false, false], 0.3)]);
+    settle(
+        &mut p,
+        &[
+            left([false, true, false, false, false], 20.0),
+            right([true, true, false, false, false], 0.3),
+        ],
+    );
     assert_eq!(p.state().octave, 1);
 }
 
@@ -52,7 +68,13 @@ fn every_degree_and_shape_is_reachable() {
     ];
     for (i, f) in degrees.iter().enumerate() {
         let mut p = GestureParser::default();
-        settle(&mut p, &[left(*f, 20.0), right([false, true, false, false, false], 0.3)]);
+        settle(
+            &mut p,
+            &[
+                left(*f, 20.0),
+                right([false, true, false, false, false], 0.3),
+            ],
+        );
         assert_eq!(p.state().degree as usize, i + 1, "fingers {f:?}");
     }
     for n in 1..=4u8 {
@@ -61,7 +83,13 @@ fn every_degree_and_shape_is_reachable() {
             f[k] = true;
         }
         let mut p = GestureParser::default();
-        settle(&mut p, &[left([false, true, false, false, false], 20.0), right(f, 0.3)]);
+        settle(
+            &mut p,
+            &[
+                left([false, true, false, false, false], 20.0),
+                right(f, 0.3),
+            ],
+        );
         assert_eq!(p.state().shape as u8, n - 1, "right fingers {f:?}");
         assert_eq!(p.state().octave, 0);
     }

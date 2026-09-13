@@ -65,37 +65,102 @@ pub enum EngineCommand {
     Stop,
     TogglePlay,
     /// Arm + (count-in if stopped) record on the given track.
-    Record { track: u8 },
+    Record {
+        track: u8,
+    },
     ToggleRecord,
-    SelectTrack { track: u8 },
-    SetMute { track: u8, on: bool },
-    SetSolo { track: u8, on: bool },
-    ToggleMute { track: u8 },
-    ToggleSolo { track: u8 },
-    SetTrackVolume { track: u8, volume: f32 },
-    SetTrackPan { track: u8, pan: f32 },
-    SetTrackLength { track: u8, bars: u8 },
-    SetTrackMidiChannel { track: u8, channel: u8 },
-    ClearTrack { track: u8 },
+    SelectTrack {
+        track: u8,
+    },
+    SetMute {
+        track: u8,
+        on: bool,
+    },
+    SetSolo {
+        track: u8,
+        on: bool,
+    },
+    ToggleMute {
+        track: u8,
+    },
+    ToggleSolo {
+        track: u8,
+    },
+    SetTrackVolume {
+        track: u8,
+        volume: f32,
+    },
+    SetTrackPan {
+        track: u8,
+        pan: f32,
+    },
+    SetTrackLength {
+        track: u8,
+        bars: u8,
+    },
+    SetTrackMidiChannel {
+        track: u8,
+        channel: u8,
+    },
+    ClearTrack {
+        track: u8,
+    },
     ClearAll,
-    ToggleStepMute { track: u8, step: u16 },
-    SetBpm { bpm: f32 },
-    NudgeBpm { delta: f32 },
-    SetTimeSig { beats: u8, unit: u8 },
-    SetBars { bars: u8 },
+    ToggleStepMute {
+        track: u8,
+        step: u16,
+    },
+    SetBpm {
+        bpm: f32,
+    },
+    NudgeBpm {
+        delta: f32,
+    },
+    SetTimeSig {
+        beats: u8,
+        unit: u8,
+    },
+    SetBars {
+        bars: u8,
+    },
     Panic,
-    SetMetronomeVolume { volume: f32 },
-    SetMetronomeEnabled { on: bool },
-    SetQuantize { quantize: Quantize },
-    SetRecordMode { mode: RecordMode },
-    SetLoopRecord { on: bool },
-    SetWrapAtLoopEnd { on: bool },
-    SetQuantizeInput { mode: QuantizeInput },
-    SetCountInBars { bars: u8 },
-    SetMidiEnabled { on: bool },
-    SetReverbEnabled { on: bool },
-    SetDelayEnabled { on: bool },
-    SetKey { key: PitchClass, mode: Mode },
+    SetMetronomeVolume {
+        volume: f32,
+    },
+    SetMetronomeEnabled {
+        on: bool,
+    },
+    SetQuantize {
+        quantize: Quantize,
+    },
+    SetRecordMode {
+        mode: RecordMode,
+    },
+    SetLoopRecord {
+        on: bool,
+    },
+    SetWrapAtLoopEnd {
+        on: bool,
+    },
+    SetQuantizeInput {
+        mode: QuantizeInput,
+    },
+    SetCountInBars {
+        bars: u8,
+    },
+    SetMidiEnabled {
+        on: bool,
+    },
+    SetReverbEnabled {
+        on: bool,
+    },
+    SetDelayEnabled {
+        on: bool,
+    },
+    SetKey {
+        key: PitchClass,
+        mode: Mode,
+    },
 }
 
 #[derive(Clone, Copy, PartialEq, Debug, Serialize, Deserialize)]
@@ -193,12 +258,9 @@ impl Engine {
     pub fn set_live(&mut self, state: MusicalState, events: &[Event]) {
         self.live = state;
         for e in events {
-            match e {
-                Event::KeyChange { key, mode } => {
-                    self.key = *key;
-                    self.mode = *mode;
-                }
-                _ => {}
+            if let Event::KeyChange { key, mode } = e {
+                self.key = *key;
+                self.mode = *mode;
             }
             self.live_events.push(*e);
         }
@@ -270,7 +332,9 @@ impl Engine {
                 let t = self.track_mut(track);
                 t.solo = !t.solo;
             }
-            C::SetTrackVolume { track, volume } => self.track_mut(track).volume = volume.clamp(0.0, 1.0),
+            C::SetTrackVolume { track, volume } => {
+                self.track_mut(track).volume = volume.clamp(0.0, 1.0)
+            }
             C::SetTrackPan { track, pan } => self.track_mut(track).pan = pan.clamp(-1.0, 1.0),
             C::SetTrackLength { track, bars } => {
                 let max = self.transport.bars;
@@ -278,7 +342,9 @@ impl Engine {
                 t.length_bars = if bars == 0 || bars >= max { 0 } else { bars };
                 self.looper.mark_dirty(track as usize);
             }
-            C::SetTrackMidiChannel { track, channel } => self.track_mut(track).midi_ch = channel.clamp(1, 16),
+            C::SetTrackMidiChannel { track, channel } => {
+                self.track_mut(track).midi_ch = channel.clamp(1, 16)
+            }
             C::ClearTrack { track } => {
                 let i = (track as usize).min(TRACKS - 1);
                 self.looper.clear_track(i);
@@ -344,7 +410,10 @@ impl Engine {
 
     fn set_bpm(&mut self, bpm: f32) {
         self.transport.set_bpm(bpm);
-        self.synth.master.delay.sync_to_beat(self.transport.samples_per_beat(), 0.75);
+        self.synth
+            .master
+            .delay
+            .sync_to_beat(self.transport.samples_per_beat(), 0.75);
         self.looper.mark_all_dirty();
     }
 
@@ -364,7 +433,12 @@ impl Engine {
         for i in 0..TRACKS {
             if self.synth.slots[i].is_sounding() {
                 self.synth.slots[i].chord_off();
-                self.midi_ch[i].apply(self.looper.tracks[i].midi_ch, &Event::ChordOff, false, &mut self.midi);
+                self.midi_ch[i].apply(
+                    self.looper.tracks[i].midi_ch,
+                    &Event::ChordOff,
+                    false,
+                    &mut self.midi,
+                );
             }
             self.track_state[i].degree = 0;
             self.track_state[i].note_count = 0;
@@ -406,7 +480,11 @@ impl Engine {
         self.synth.all_off();
         self.pending = None;
         for i in 0..SLOTS {
-            let ch = if i < TRACKS { self.looper.tracks[i].midi_ch } else { self.settings.midi_live_channel };
+            let ch = if i < TRACKS {
+                self.looper.tracks[i].midi_ch
+            } else {
+                self.settings.midi_live_channel
+            };
             self.midi_ch[i].all_off(ch, &mut self.midi);
         }
         for s in self.track_state.iter_mut() {
@@ -451,7 +529,11 @@ impl Engine {
         let mut done = 0;
         while done < total {
             let n = (total - done).min(MAX_BLOCK);
-            self.process_block(&mut out_l[done..done + n], &mut out_r[done..done + n], &mut cue[done..done + n]);
+            self.process_block(
+                &mut out_l[done..done + n],
+                &mut out_r[done..done + n],
+                &mut cue[done..done + n],
+            );
             done += n;
         }
     }
@@ -472,15 +554,10 @@ impl Engine {
                 self.synth.metronome.click(t.is_bar_start, self.sr);
                 self.synth.metronome.render(cue, t.offset);
             }
-            if !t.is_count_in {
-                self.beat_seq = self.beat_seq.wrapping_add(1);
-                self.last_beat = t.beat;
-                self.last_beat_bar = t.is_bar_start;
-            } else {
-                self.beat_seq = self.beat_seq.wrapping_add(1);
-                self.last_beat = t.beat;
-                self.last_beat_bar = t.is_bar_start;
-            }
+            // count-in beats pulse the UI too
+            self.beat_seq = self.beat_seq.wrapping_add(1);
+            self.last_beat = t.beat;
+            self.last_beat_bar = t.is_bar_start;
             if t.is_loop_start {
                 loop_started = true;
             }
@@ -489,7 +566,9 @@ impl Engine {
             self.synth.metronome.render(cue, 0);
         }
         let count_in_finished = !was_playing && self.transport.state == TransportState::Playing;
-        if (loop_started || wrapped || count_in_finished) && self.looper.status() == RecordStatus::Armed {
+        if (loop_started || wrapped || count_in_finished)
+            && self.looper.status() == RecordStatus::Armed
+        {
             self.looper.begin_recording(&self.transport);
             self.looper.record_initial_chord(&self.live);
         }
@@ -504,15 +583,27 @@ impl Engine {
                 QuantizeInput::Always => true,
             };
         let live_pos = self.transport.position;
-        for e in self.live_events.as_slice().iter().copied().collect::<heapless_vec::Vec<Event, 32>>().iter() {
+        for e in self
+            .live_events
+            .as_slice()
+            .iter()
+            .copied()
+            .collect::<heapless_vec::Vec<Event, 32>>()
+            .iter()
+        {
             match e {
                 Event::ChordOn { .. } if quantize_now => {
-                    let (dist, behind) = self.transport.grid_distance(live_pos, self.looper.settings.quantize);
+                    let (dist, behind) = self
+                        .transport
+                        .grid_distance(live_pos, self.looper.settings.quantize);
                     if behind || dist < n as u64 {
                         self.scratch_events.push(*e);
                         self.pending = None;
                     } else {
-                        self.pending = Some(Pending { event: *e, due: now + dist });
+                        self.pending = Some(Pending {
+                            event: *e,
+                            due: now + dist,
+                        });
                     }
                 }
                 Event::ChordOff if self.pending.is_some() => {
@@ -534,19 +625,32 @@ impl Engine {
         }
         // apply live events to the live slot + MIDI + UI
         let live_ch = self.settings.midi_live_channel;
-        for e in self.scratch_events.as_slice().iter().copied().collect::<heapless_vec::Vec<Event, 32>>().iter() {
+        for e in self
+            .scratch_events
+            .as_slice()
+            .iter()
+            .copied()
+            .collect::<heapless_vec::Vec<Event, 32>>()
+            .iter()
+        {
             self.apply_event(LIVE_SLOT, e, now);
             if self.settings.midi_enabled {
-                self.midi_ch[LIVE_SLOT].apply(live_ch, e, self.settings.midi_use_expression, &mut self.midi);
+                self.midi_ch[LIVE_SLOT].apply(
+                    live_ch,
+                    e,
+                    self.settings.midi_use_expression,
+                    &mut self.midi,
+                );
             }
             self.ui_events.push(*e);
         }
         // record
         if recording {
             let evs = self.scratch_events;
-            let pos = if wrapped && !loop_started { self.transport.position } else { self.transport.position };
+            let pos = self.transport.position;
             let live = self.live;
-            self.looper.record(pos, &live, evs.as_slice(), &self.transport);
+            self.looper
+                .record(pos, &live, evs.as_slice(), &self.transport);
         } else if self.was_recording && wrapped {
             // recording ended exactly at the wrap
         }
@@ -555,25 +659,52 @@ impl Engine {
         // ----- loop playback ----------------------------------------------------
         if self.transport.state == TransportState::Playing && was_running {
             let from = pos_before;
-            let to = if wrapped { self.transport.loop_len() } else { self.transport.position };
+            let to = if wrapped {
+                self.transport.loop_len()
+            } else {
+                self.transport.position
+            };
             for tr in 0..TRACKS {
-                let rec_here = self.looper.recording_track() == Some(tr) && recording && self.looper.settings.record_mode == RecordMode::Replace;
+                let rec_here = self.looper.recording_track() == Some(tr)
+                    && recording
+                    && self.looper.settings.record_mode == RecordMode::Replace;
                 if rec_here {
                     continue; // replace-recording: the old content is gone anyway
                 }
                 self.scratch_events.clear();
-                self.looper.playback(tr, from, to, &self.transport, &mut self.scratch_events);
+                self.looper
+                    .playback(tr, from, to, &self.transport, &mut self.scratch_events);
                 if wrapped && self.transport.position > 0 {
-                    self.looper.playback(tr, 0, self.transport.position, &self.transport, &mut self.scratch_events);
+                    self.looper.playback(
+                        tr,
+                        0,
+                        self.transport.position,
+                        &self.transport,
+                        &mut self.scratch_events,
+                    );
                 }
                 let ch = self.looper.tracks[tr].midi_ch;
-                for e in self.scratch_events.as_slice().iter().copied().collect::<heapless_vec::Vec<Event, 32>>().iter() {
+                for e in self
+                    .scratch_events
+                    .as_slice()
+                    .iter()
+                    .copied()
+                    .collect::<heapless_vec::Vec<Event, 32>>()
+                    .iter()
+                {
                     self.apply_event(tr, e, now);
                     if self.settings.midi_enabled {
-                        self.midi_ch[tr].apply(ch, e, self.settings.midi_use_expression, &mut self.midi);
+                        self.midi_ch[tr].apply(
+                            ch,
+                            e,
+                            self.settings.midi_use_expression,
+                            &mut self.midi,
+                        );
                     }
                 }
-                let (c, v, p) = self.looper.curve_values(tr, self.transport.position, &self.transport);
+                let (c, v, p) =
+                    self.looper
+                        .curve_values(tr, self.transport.position, &self.transport);
                 let ts = &mut self.track_state[tr];
                 ts.cutoff = c;
                 ts.volume = v;
@@ -581,7 +712,16 @@ impl Engine {
                 ts.key = self.key;
                 ts.mode = self.mode;
                 if self.settings.midi_enabled {
-                    self.midi_ch[tr].apply(ch, &Event::ParamChange { cutoff: c, volume: v * self.looper.tracks[tr].volume, pan: p }, self.settings.midi_use_expression, &mut self.midi);
+                    self.midi_ch[tr].apply(
+                        ch,
+                        &Event::ParamChange {
+                            cutoff: c,
+                            volume: v * self.looper.tracks[tr].volume,
+                            pan: p,
+                        },
+                        self.settings.midi_use_expression,
+                        &mut self.midi,
+                    );
                 }
             }
         }
@@ -605,7 +745,7 @@ impl Engine {
             let ts = self.track_state[tr];
             self.params[tr] = SlotParams {
                 cutoff: ts.cutoff,
-                volume: if ts.note_count > 0 { ts.volume } else { ts.volume },
+                volume: ts.volume,
                 pan: ts.pan,
                 arp: ts.arp,
                 arp_period: (spb / arp_div(ts.arp_rate) as f64) as u32,
@@ -625,14 +765,30 @@ impl Engine {
             track_pan: 0.0,
             audible: true,
         };
-        let theremin = if live.theremin { Some((live.theremin_pitch_hz, live.theremin_volume, live.theremin_vibrato, live.cutoff)) } else { None };
+        let theremin = if live.theremin {
+            Some((
+                live.theremin_pitch_hz,
+                live.theremin_volume,
+                live.theremin_vibrato,
+                live.cutoff,
+            ))
+        } else {
+            None
+        };
         let params = self.params;
         self.synth.render(out_l, out_r, &params, theremin);
     }
 
     fn apply_event(&mut self, slot: usize, e: &Event, now: u64) {
         match e {
-            Event::ChordOn { notes, count, degree, quality, shape, octave } => {
+            Event::ChordOn {
+                notes,
+                count,
+                degree,
+                quality,
+                shape,
+                octave,
+            } => {
                 self.synth.slots[slot].chord_on(&notes[..(*count as usize).min(4)]);
                 if slot < TRACKS {
                     let ts = &mut self.track_state[slot];
@@ -655,10 +811,8 @@ impl Engine {
                 self.synth.slots[slot].bass_hit(*note);
                 self.bass_release_at[slot] = now + (self.sr * 0.25) as u64;
             }
-            Event::ArpToggle { on } => {
-                if slot < TRACKS {
-                    self.track_state[slot].arp = *on;
-                }
+            Event::ArpToggle { on } if slot < TRACKS => {
+                self.track_state[slot].arp = *on;
             }
             _ => {}
         }
@@ -667,7 +821,12 @@ impl Engine {
     // ----------------------------------------------------------------- sessions
 
     pub fn to_session(&self) -> SessionFile {
-        let mut s = SessionFile::new(&self.transport, self.key, self.mode, self.looper.tracks.clone());
+        let mut s = SessionFile::new(
+            &self.transport,
+            self.key,
+            self.mode,
+            self.looper.tracks.clone(),
+        );
         s.loop_settings = self.looper.settings;
         s.instrument_presets = vec![self.synth.slots[LIVE_SLOT].inst.clone()];
         s
@@ -687,7 +846,10 @@ impl Engine {
         if let Some(inst) = s.instrument_presets.first() {
             self.synth.slots[LIVE_SLOT].set_instrument(inst.clone());
         }
-        self.synth.master.delay.sync_to_beat(self.transport.samples_per_beat(), 0.75);
+        self.synth
+            .master
+            .delay
+            .sync_to_beat(self.transport.samples_per_beat(), 0.75);
     }
 
     /// Offline bounce of a session: `passes` loops, stereo interleaved f32, no metronome.
@@ -733,7 +895,10 @@ mod heapless_vec {
     }
     impl<T: Copy, const N: usize> FromIterator<T> for Vec<T, N> {
         fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
-            let mut v = Self { items: [None; N], len: 0 };
+            let mut v = Self {
+                items: [None; N],
+                len: 0,
+            };
             for it in iter {
                 if v.len < N {
                     v.items[v.len] = Some(it);
@@ -774,7 +939,12 @@ mod tests {
     use crate::music::VoicingSettings;
 
     fn chord_state(degree: u8) -> MusicalState {
-        let mut s = MusicalState { degree, volume: 0.8, cutoff: 0.8, ..Default::default() };
+        let mut s = MusicalState {
+            degree,
+            volume: 0.8,
+            cutoff: 0.8,
+            ..Default::default()
+        };
         s.derive_notes(VoicingSettings::default());
         s
     }
@@ -839,9 +1009,17 @@ mod tests {
         let tr = &e.looper.tracks[0];
         assert!(tr.events.len() >= 2, "events {:?}", tr.events);
         assert_eq!(tr.events[0].t, 0);
-        let iv = tr.events.iter().find(|ev| matches!(ev.event, Event::ChordOn { degree: 4, .. })).expect("IV recorded");
+        let iv = tr
+            .events
+            .iter()
+            .find(|ev| matches!(ev.event, Event::ChordOn { degree: 4, .. }))
+            .expect("IV recorded");
         assert_eq!(iv.t % 6000, 0, "quantized to a 16th");
-        assert!((iv.t as i64 - 48_000).abs() <= 6000, "IV near beat 3: {}", iv.t);
+        assert!(
+            (iv.t as i64 - 48_000).abs() <= 6000,
+            "IV near beat 3: {}",
+            iv.t
+        );
         // live hand goes silent; the track should play on its own
         let mut off = s4;
         off.degree = 0;
@@ -873,7 +1051,10 @@ mod tests {
         e.command(EngineCommand::SetBpm { bpm: 120.0 });
         e.command(EngineCommand::SetBars { bars: 1 });
         let s = chord_state(5);
-        e.looper.tracks[0].events.push(crate::looper::TimedEvent { t: 0, event: Event::chord_on_from(&s) });
+        e.looper.tracks[0].events.push(crate::looper::TimedEvent {
+            t: 0,
+            event: Event::chord_on_from(&s),
+        });
         let sess = e.to_session();
         let audio = Engine::render_offline(&sess, 48_000.0, 1);
         assert_eq!(audio.len() as u64, (96_000 + 72_000) * 2);
@@ -889,7 +1070,10 @@ mod tests {
         let mut e = Engine::new(48_000.0);
         e.command(EngineCommand::SetTimeSig { beats: 6, unit: 8 });
         e.command(EngineCommand::ToggleMute { track: 2 });
-        e.command(EngineCommand::SetTrackVolume { track: 1, volume: 2.0 });
+        e.command(EngineCommand::SetTrackVolume {
+            track: 1,
+            volume: 2.0,
+        });
         assert!(e.looper.tracks[2].mute);
         assert_eq!(e.looper.tracks[1].volume, 1.0);
         assert_eq!(e.position().beats, 6);

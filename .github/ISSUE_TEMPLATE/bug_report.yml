@@ -1,0 +1,36 @@
+name: Bug report
+description: Something does not work as described
+labels: [bug]
+body:
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Where
+      options: [Web (Chrome/Edge), Web (Firefox), Web (Safari), Desktop Windows, Desktop macOS, Desktop Linux, Community service]
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: Include the chord/gesture, key, transport state and what you expected.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Start, allow camera
+        2. Left hand index + middle, right hand three fingers
+        3. Press R ...
+  - type: textarea
+    id: hud
+    attributes:
+      label: HUD readout
+      description: The small line under the chord name (latency, inference ms, camera fps) and the Settings > Audio backend line.
+  - type: textarea
+    id: logs
+    attributes:
+      label: Console output or logs
+      render: shell

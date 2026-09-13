@@ -80,7 +80,15 @@ impl MusicalState {
     /// Recompute `notes`/`note_count` from the discrete fields.
     pub fn derive_notes(&mut self, voicing: VoicingSettings) {
         if (1..=7).contains(&self.degree) {
-            let (n, c) = music::chord_notes(self.key, self.mode, self.degree, self.quality, self.shape, self.octave, voicing);
+            let (n, c) = music::chord_notes(
+                self.key,
+                self.mode,
+                self.degree,
+                self.quality,
+                self.shape,
+                self.octave,
+                voicing,
+            );
             self.notes = n;
             self.note_count = c;
         } else {
@@ -158,7 +166,11 @@ impl MusicalState {
         let g = |i: usize| f.get(i).copied().unwrap_or(0.0);
         let mut s = MusicalState {
             key: PitchClass::from_index(g(0) as i32),
-            mode: if g(1) >= 0.5 { Mode::Minor } else { Mode::Major },
+            mode: if g(1) >= 0.5 {
+                Mode::Minor
+            } else {
+                Mode::Major
+            },
             degree: g(2).clamp(0.0, 7.0) as u8,
             quality: match g(3) as i32 {
                 1 => Quality::Minor,
@@ -235,7 +247,14 @@ impl Event {
     pub fn to_floats(&self, out: &mut [f32]) {
         out[..EVENT_FLOATS].iter_mut().for_each(|v| *v = 0.0);
         match self {
-            Event::ChordOn { notes, count, degree, quality, shape, octave } => {
+            Event::ChordOn {
+                notes,
+                count,
+                degree,
+                quality,
+                shape,
+                octave,
+            } => {
                 out[0] = 1.0;
                 out[1] = *count as f32;
                 out[2] = notes[0] as f32 + 128.0 * notes[1] as f32;
@@ -255,7 +274,11 @@ impl Event {
                 out[7] = *octave as f32;
             }
             Event::ChordOff => out[0] = 2.0,
-            Event::ParamChange { cutoff, volume, pan } => {
+            Event::ParamChange {
+                cutoff,
+                volume,
+                pan,
+            } => {
                 out[0] = 3.0;
                 out[1] = *cutoff;
                 out[2] = *volume;
@@ -288,7 +311,12 @@ impl Event {
                 let n01 = g(2) as u32;
                 let n23 = g(3) as u32;
                 Event::ChordOn {
-                    notes: [(n01 % 128) as u8, (n01 / 128) as u8, (n23 % 128) as u8, (n23 / 128) as u8],
+                    notes: [
+                        (n01 % 128) as u8,
+                        (n01 / 128) as u8,
+                        (n23 % 128) as u8,
+                        (n23 / 128) as u8,
+                    ],
                     count: g(1).clamp(0.0, 4.0) as u8,
                     degree: g(4).clamp(0.0, 7.0) as u8,
                     quality: match g(5) as i32 {
@@ -306,10 +334,23 @@ impl Event {
                 }
             }
             2 => Event::ChordOff,
-            3 => Event::ParamChange { cutoff: g(1), volume: g(2), pan: g(3) },
+            3 => Event::ParamChange {
+                cutoff: g(1),
+                volume: g(2),
+                pan: g(3),
+            },
             4 => Event::ArpToggle { on: g(1) >= 0.5 },
-            5 => Event::KeyChange { key: PitchClass::from_index(g(1) as i32), mode: if g(2) >= 0.5 { Mode::Minor } else { Mode::Major } },
-            6 => Event::BassHit { note: g(1).clamp(0.0, 127.0) as u8 },
+            5 => Event::KeyChange {
+                key: PitchClass::from_index(g(1) as i32),
+                mode: if g(2) >= 0.5 {
+                    Mode::Minor
+                } else {
+                    Mode::Major
+                },
+            },
+            6 => Event::BassHit {
+                note: g(1).clamp(0.0, 127.0) as u8,
+            },
             7 => Event::Latch { on: g(1) >= 0.5 },
             _ => return None,
         })
@@ -340,7 +381,10 @@ pub struct EventList {
 
 impl Default for EventList {
     fn default() -> Self {
-        Self { items: [Event::ChordOff; 32], len: 0 }
+        Self {
+            items: [Event::ChordOff; 32],
+            len: 0,
+        }
     }
 }
 
@@ -387,7 +431,15 @@ mod tests {
 
     #[test]
     fn float_roundtrip() {
-        let mut s = MusicalState { degree: 4, quality: Quality::Minor, shape: Shape::Seventh, octave: -1, cutoff: 0.3, volume: 0.9, ..Default::default() };
+        let mut s = MusicalState {
+            degree: 4,
+            quality: Quality::Minor,
+            shape: Shape::Seventh,
+            octave: -1,
+            cutoff: 0.3,
+            volume: 0.9,
+            ..Default::default()
+        };
         s.derive_notes(VoicingSettings::default());
         let mut f = [0f32; STATE_FLOATS];
         s.to_floats(&mut f);

@@ -29,7 +29,11 @@ const IDX: usize = 0b011;
 impl<T: Copy> TripleBuffer<T> {
     pub fn new(init: T) -> Self {
         Self {
-            slots: [UnsafeCell::new(init), UnsafeCell::new(init), UnsafeCell::new(init)],
+            slots: [
+                UnsafeCell::new(init),
+                UnsafeCell::new(init),
+                UnsafeCell::new(init),
+            ],
             state: AtomicUsize::new(0), // latest = slot 0, not fresh
             write_idx: UnsafeCell::new(1),
             read_idx: UnsafeCell::new(2),
@@ -141,7 +145,9 @@ impl<T: Copy, const N: usize> SpscRing<T, N> {
     }
 
     pub fn len(&self) -> usize {
-        self.head.load(Ordering::Acquire).wrapping_sub(self.tail.load(Ordering::Acquire))
+        self.head
+            .load(Ordering::Acquire)
+            .wrapping_sub(self.tail.load(Ordering::Acquire))
     }
 
     pub fn is_empty(&self) -> bool {

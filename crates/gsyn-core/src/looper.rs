@@ -98,7 +98,11 @@ impl Track {
     }
 
     pub fn steps(&self, t: &Transport) -> usize {
-        let bars = if self.length_bars == 0 || self.length_bars >= t.bars { t.bars } else { self.length_bars };
+        let bars = if self.length_bars == 0 || self.length_bars >= t.bars {
+            t.bars
+        } else {
+            self.length_bars
+        };
         (t.sig.steps_per_bar() as usize * bars as usize).min(MAX_STEPS)
     }
 
@@ -186,10 +190,20 @@ impl Track {
             Some(i) => self.events[i].event = chord,
             None => {
                 // insert a one-step chord
-                self.events.push(TimedEvent { t: start, event: chord });
-                let has_event_in_step = self.events.iter().any(|e| e.t > start && e.t < next && matches!(e.event, Event::ChordOn { .. } | Event::ChordOff));
+                self.events.push(TimedEvent {
+                    t: start,
+                    event: chord,
+                });
+                let has_event_in_step = self.events.iter().any(|e| {
+                    e.t > start
+                        && e.t < next
+                        && matches!(e.event, Event::ChordOn { .. } | Event::ChordOff)
+                });
                 if !has_event_in_step {
-                    self.events.push(TimedEvent { t: next.saturating_sub(1), event: Event::ChordOff });
+                    self.events.push(TimedEvent {
+                        t: next.saturating_sub(1),
+                        event: Event::ChordOff,
+                    });
                 }
                 self.events.sort_by_key(|e| e.t);
             }
@@ -234,13 +248,43 @@ pub struct ChordCell {
 impl ChordCell {
     fn from_event(e: Event) -> Self {
         match e {
-            Event::ChordOn { notes, count, degree, quality, shape, octave } => Self { degree, quality, shape, octave, notes, count, volume: 0.8 },
-            _ => Self { degree: 0, quality: Quality::Major, shape: Shape::Root, octave: 0, notes: [0; 4], count: 0, volume: 0.0 },
+            Event::ChordOn {
+                notes,
+                count,
+                degree,
+                quality,
+                shape,
+                octave,
+            } => Self {
+                degree,
+                quality,
+                shape,
+                octave,
+                notes,
+                count,
+                volume: 0.8,
+            },
+            _ => Self {
+                degree: 0,
+                quality: Quality::Major,
+                shape: Shape::Root,
+                octave: 0,
+                notes: [0; 4],
+                count: 0,
+                volume: 0.0,
+            },
         }
     }
 
     pub fn to_event(&self) -> Event {
-        Event::ChordOn { notes: self.notes, count: self.count, degree: self.degree, quality: self.quality, shape: self.shape, octave: self.octave }
+        Event::ChordOn {
+            notes: self.notes,
+            count: self.count,
+            degree: self.degree,
+            quality: self.quality,
+            shape: self.shape,
+            octave: self.octave,
+        }
     }
 }
 
@@ -267,7 +311,14 @@ pub struct LoopSettings {
 
 impl Default for LoopSettings {
     fn default() -> Self {
-        Self { quantize: Quantize::Sixteenth, wrap_at_loop_end: true, record_mode: RecordMode::Overdub, loop_record: false, count_in_bars: 1, curve_eps: 0.01 }
+        Self {
+            quantize: Quantize::Sixteenth,
+            wrap_at_loop_end: true,
+            record_mode: RecordMode::Overdub,
+            loop_record: false,
+            count_in_bars: 1,
+            curve_eps: 0.01,
+        }
     }
 }
 
@@ -309,7 +360,13 @@ struct TrackRuntime {
 
 impl Default for TrackRuntime {
     fn default() -> Self {
-        Self { playing: None, last_step: -1, step_chord: [None; MAX_STEPS], steps: 0, dirty: true }
+        Self {
+            playing: None,
+            last_step: -1,
+            step_chord: [None; MAX_STEPS],
+            steps: 0,
+            dirty: true,
+        }
     }
 }
 
@@ -386,7 +443,9 @@ impl LoopEngine {
 
     /// Called by the engine at loop start (bar 1 beat 1) while armed.
     pub fn begin_recording(&mut self, transport: &Transport) {
-        let Some(track) = self.armed.take() else { return };
+        let Some(track) = self.armed.take() else {
+            return;
+        };
         let len = self.tracks[track].len_samples(transport);
         if self.settings.record_mode == RecordMode::Replace {
             self.tracks[track].clear();
@@ -406,8 +465,16 @@ impl LoopEngine {
 
     /// Record the live state + events at loop position `pos`. Returns true if the
     /// recording just completed (track length reached).
-    pub fn record(&mut self, pos: u64, state: &MusicalState, events: &[Event], transport: &Transport) -> bool {
-        let Some(rec) = self.rec.as_mut() else { return false };
+    pub fn record(
+        &mut self,
+        pos: u64,
+        state: &MusicalState,
+        events: &[Event],
+        transport: &Transport,
+    ) -> bool {
+        let Some(rec) = self.rec.as_mut() else {
+            return false;
+        };
         if !rec.started {
             return false;
         }
@@ -420,7 +487,10 @@ impl LoopEngine {
         }
         for e in events {
             match e {
-                Event::ChordOn { .. } | Event::ChordOff | Event::BassHit { .. } | Event::ArpToggle { .. } => {
+                Event::ChordOn { .. }
+                | Event::ChordOff
+                | Event::BassHit { .. }
+                | Event::ArpToggle { .. } => {
                     rec.events.push(TimedEvent { t: pos, event: *e });
                 }
                 _ => {}
@@ -436,14 +506,19 @@ impl LoopEngine {
     pub fn record_initial_chord(&mut self, state: &MusicalState) {
         if let Some(rec) = self.rec.as_mut() {
             if rec.started && rec.events.is_empty() && state.has_chord() {
-                rec.events.push(TimedEvent { t: 0, event: Event::chord_on_from(state) });
+                rec.events.push(TimedEvent {
+                    t: 0,
+                    event: Event::chord_on_from(state),
+                });
             }
         }
     }
 
     /// Finalize: quantize, simplify, wrap/cut, merge. Returns true.
     pub fn finish_recording(&mut self, transport: &Transport) -> bool {
-        let Some(mut rec) = self.rec.take() else { return false };
+        let Some(mut rec) = self.rec.take() else {
+            return false;
+        };
         let q = self.settings.quantize;
         let len = rec.len.max(1);
         for e in rec.events.iter_mut() {
@@ -459,7 +534,10 @@ impl LoopEngine {
         let mut cleaned: Vec<TimedEvent> = Vec::with_capacity(rec.events.len());
         for e in rec.events.drain(..) {
             if let Some(last) = cleaned.last_mut() {
-                if last.t == e.t && matches!(e.event, Event::ChordOn { .. }) && matches!(last.event, Event::ChordOn { .. } | Event::ChordOff) {
+                if last.t == e.t
+                    && matches!(e.event, Event::ChordOn { .. })
+                    && matches!(last.event, Event::ChordOn { .. } | Event::ChordOff)
+                {
                     *last = e;
                     continue;
                 }
@@ -469,23 +547,46 @@ impl LoopEngine {
         // a ChordOff that precedes a ChordOn quantized to the same/earlier time is noise
         let mut i = 0;
         while i + 1 < cleaned.len() {
-            if matches!(cleaned[i].event, Event::ChordOff) && matches!(cleaned[i + 1].event, Event::ChordOn { .. }) && cleaned[i + 1].t <= cleaned[i].t {
+            if matches!(cleaned[i].event, Event::ChordOff)
+                && matches!(cleaned[i + 1].event, Event::ChordOn { .. })
+                && cleaned[i + 1].t <= cleaned[i].t
+            {
                 cleaned.remove(i);
             } else {
                 i += 1;
             }
         }
-        let still_sounding = matches!(cleaned.iter().rev().find(|e| matches!(e.event, Event::ChordOn { .. } | Event::ChordOff)).map(|e| e.event), Some(Event::ChordOn { .. }));
+        let still_sounding = matches!(
+            cleaned
+                .iter()
+                .rev()
+                .find(|e| matches!(e.event, Event::ChordOn { .. } | Event::ChordOff))
+                .map(|e| e.event),
+            Some(Event::ChordOn { .. })
+        );
         if still_sounding && !self.settings.wrap_at_loop_end {
-            cleaned.push(TimedEvent { t: len - 1, event: Event::ChordOff });
+            cleaned.push(TimedEvent {
+                t: len - 1,
+                event: Event::ChordOff,
+            });
         }
         let eps = self.settings.curve_eps;
-        let mut curves = Curves { cutoff: rec.cutoff.finish(eps), volume: rec.volume.finish(eps), pan: rec.pan.finish(eps) };
+        let mut curves = Curves {
+            cutoff: rec.cutoff.finish(eps),
+            volume: rec.volume.finish(eps),
+            pan: rec.pan.finish(eps),
+        };
         curves.cutoff.truncate_to(len);
         curves.volume.truncate_to(len);
         curves.pan.truncate_to(len);
         let track = rec.track;
-        self.tracks[track].merge(Recording { events: cleaned, curves }, self.settings.record_mode);
+        self.tracks[track].merge(
+            Recording {
+                events: cleaned,
+                curves,
+            },
+            self.settings.record_mode,
+        );
         self.rt[track].dirty = true;
         if self.settings.loop_record {
             // keep going: a fresh overdub pass on the same track
@@ -512,7 +613,14 @@ impl LoopEngine {
 
     /// Produce the playback events for `track` over the global position range
     /// [from, to) (no wrap inside the range). Step mutes are applied here.
-    pub fn playback(&mut self, track: usize, from: u64, to: u64, transport: &Transport, out: &mut EventList) {
+    pub fn playback(
+        &mut self,
+        track: usize,
+        from: u64,
+        to: u64,
+        transport: &Transport,
+        out: &mut EventList,
+    ) {
         if self.rt[track].dirty {
             self.rebuild(track, transport);
         }
@@ -598,7 +706,11 @@ impl LoopEngine {
         let t = &self.tracks[track];
         let tlen = t.len_samples(transport).max(1);
         let p = pos % tlen;
-        (t.curves.cutoff.value_at(p, tlen, 0.7), t.curves.volume.value_at(p, tlen, 0.8), t.curves.pan.value_at(p, tlen, 0.0))
+        (
+            t.curves.cutoff.value_at(p, tlen, 0.7),
+            t.curves.volume.value_at(p, tlen, 0.8),
+            t.curves.pan.value_at(p, tlen, 0.0),
+        )
     }
 
     /// What the track is currently sounding (for ghosts / HUD).
@@ -635,7 +747,10 @@ impl LoopEngine {
 
     /// Grid for the UI: rows = tracks, cells = chord or None (mute flag separate).
     pub fn grid(&self, transport: &Transport) -> Vec<Vec<Option<ChordCell>>> {
-        self.tracks.iter().map(|t| t.step_chords(transport)).collect()
+        self.tracks
+            .iter()
+            .map(|t| t.step_chords(transport))
+            .collect()
     }
 
     /// Replace tracks wholesale (session load).
@@ -665,7 +780,11 @@ mod tests {
     }
 
     fn chord(degree: u8) -> MusicalState {
-        let mut s = MusicalState { degree, volume: 0.8, ..Default::default() };
+        let mut s = MusicalState {
+            degree,
+            volume: 0.8,
+            ..Default::default()
+        };
         s.derive_notes(VoicingSettings::default());
         s
     }
@@ -726,7 +845,10 @@ mod tests {
     fn step_mute_silences_and_restores() {
         let t = transport();
         let mut lp = LoopEngine::new(48_000.0);
-        lp.tracks[0].events.push(TimedEvent { t: 0, event: Event::chord_on_from(&chord(1)) });
+        lp.tracks[0].events.push(TimedEvent {
+            t: 0,
+            event: Event::chord_on_from(&chord(1)),
+        });
         lp.mark_dirty(0);
         lp.tracks[0].set_step_mute(2, true);
         let mut out = EventList::new();
@@ -742,7 +864,10 @@ mod tests {
         }
         // ChordOn at 0, ChordOff at step 2 (12_000), ChordOn again at step 3 (18_000)
         assert!(matches!(log[0], (0, Event::ChordOn { .. })));
-        let off = log.iter().find(|(_, e)| matches!(e, Event::ChordOff)).unwrap();
+        let off = log
+            .iter()
+            .find(|(_, e)| matches!(e, Event::ChordOff))
+            .unwrap();
         assert!(off.0 >= 11_900 && off.0 <= 12_100, "{}", off.0);
         let on2 = log.iter().filter(|(_, e)| e.is_chord_on()).nth(1).unwrap();
         assert!(on2.0 >= 17_900 && on2.0 <= 18_100, "{}", on2.0);
@@ -754,10 +879,16 @@ mod tests {
         let mut lp = LoopEngine::new(48_000.0);
         lp.settings.record_mode = RecordMode::Replace;
         lp.settings.wrap_at_loop_end = false;
-        lp.tracks[0].events.push(TimedEvent { t: 5, event: Event::ChordOff });
+        lp.tracks[0].events.push(TimedEvent {
+            t: 5,
+            event: Event::ChordOff,
+        });
         lp.arm(0);
         lp.begin_recording(&t);
-        assert!(lp.tracks[0].events.is_empty(), "replace wipes the track first");
+        assert!(
+            lp.tracks[0].events.is_empty(),
+            "replace wipes the track first"
+        );
         let c = chord(2);
         lp.record(0, &c, &[Event::chord_on_from(&c)], &t);
         lp.record(t.loop_len(), &c, &[], &t);
@@ -771,7 +902,10 @@ mod tests {
     fn replace_chord_at_step_edits_grid() {
         let t = transport();
         let mut lp = LoopEngine::new(48_000.0);
-        lp.tracks[0].events.push(TimedEvent { t: 0, event: Event::chord_on_from(&chord(1)) });
+        lp.tracks[0].events.push(TimedEvent {
+            t: 0,
+            event: Event::chord_on_from(&chord(1)),
+        });
         lp.tracks[0].replace_chord_at_step(0, &t, Event::chord_on_from(&chord(5)));
         assert_eq!(lp.tracks[0].step_chords(&t)[3].unwrap().degree, 5);
         // insert into an empty track
@@ -788,8 +922,14 @@ mod tests {
         t.set_bars(2);
         let mut lp = LoopEngine::new(48_000.0);
         lp.tracks[0].length_bars = 1;
-        lp.tracks[0].events.push(TimedEvent { t: 0, event: Event::chord_on_from(&chord(1)) });
-        lp.tracks[0].events.push(TimedEvent { t: 48_000, event: Event::ChordOff });
+        lp.tracks[0].events.push(TimedEvent {
+            t: 0,
+            event: Event::chord_on_from(&chord(1)),
+        });
+        lp.tracks[0].events.push(TimedEvent {
+            t: 48_000,
+            event: Event::ChordOff,
+        });
         lp.mark_dirty(0);
         let mut out = EventList::new();
         let mut ons = 0;

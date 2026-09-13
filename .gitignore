@@ -1,14 +1,32 @@
+# dependencies
 node_modules/
-target/
-dist/
-app/dist/
-app/src/lib/wasm/pkg/
-app/public/mediapipe/
-app/public/models/*.task
-src-tauri/binaries/ffmpeg-*
-src-tauri/gen/
-services/community/build/
-services/community/erl_crash.dump
-*.log
-.DS_Store
+/app/node_modules/
+
+# build output
+/target/
+/src-tauri/target/
+/app/dist/
+/app/src/lib/wasm/pkg/
+/crates/gsyn-zig/zig-out/
 /crates/gsyn-zig/.zig-cache/
+/services/community/build/
+/services/community/erl_crash.dump
+/src-tauri/gen/schemas/
+
+# fetched at setup time (npm run models / scripts/fetch-ffmpeg.mjs)
+/app/public/mediapipe/
+/app/public/models/*.task
+/src-tauri/binaries/ffmpeg-*
+
+# local state
+*.log
+.env
+.env.*
+!.env.example
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.swp
+/tmp/

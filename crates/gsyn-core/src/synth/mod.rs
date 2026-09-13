@@ -33,7 +33,10 @@ struct Adsr {
 
 impl Default for Adsr {
     fn default() -> Self {
-        Self { stage: Stage::Idle, level: 0.0 }
+        Self {
+            stage: Stage::Idle,
+            level: 0.0,
+        }
     }
 }
 
@@ -103,7 +106,16 @@ pub struct Voice {
 
 impl Default for Voice {
     fn default() -> Self {
-        Self { note: 0, env: Adsr::default(), phase: [0.0, 0.37], freq: 220.0, target_freq: 220.0, filt: [0.0; 2], spread: 0.0, age: 0 }
+        Self {
+            note: 0,
+            env: Adsr::default(),
+            phase: [0.0, 0.37],
+            freq: 220.0,
+            target_freq: 220.0,
+            filt: [0.0; 2],
+            spread: 0.0,
+            age: 0,
+        }
     }
 }
 
@@ -124,7 +136,16 @@ impl Voice {
     }
 
     /// Render this voice into `out` (mono, overwriting). Returns false if idle.
-    fn render(&mut self, out: &mut [f32], env_buf: &mut [f32], tmp: &mut [f32], inst: &Instrument, osc: &[OscSpec; 2], cutoff_hz: f32, sr: f32) -> bool {
+    fn render(
+        &mut self,
+        out: &mut [f32],
+        env_buf: &mut [f32],
+        tmp: &mut [f32],
+        inst: &Instrument,
+        osc: &[OscSpec; 2],
+        cutoff_hz: f32,
+        sr: f32,
+    ) -> bool {
         if !self.active() {
             return false;
         }
@@ -179,7 +200,16 @@ pub struct SlotParams {
 
 impl Default for SlotParams {
     fn default() -> Self {
-        Self { cutoff: 0.7, volume: 0.0, pan: 0.0, arp: false, arp_period: 12_000, gain: 1.0, track_pan: 0.0, audible: true }
+        Self {
+            cutoff: 0.7,
+            volume: 0.0,
+            pan: 0.0,
+            arp: false,
+            arp_period: 12_000,
+            gain: 1.0,
+            track_pan: 0.0,
+            audible: true,
+        }
     }
 }
 
@@ -254,7 +284,10 @@ impl ChordSlot {
         }
         // assign new notes to voices
         for &n in new {
-            if self.voices[..4].iter().any(|v| v.active() && v.note == n && v.env.stage != Stage::Release) {
+            if self.voices[..4]
+                .iter()
+                .any(|v| v.active() && v.note == n && v.env.stage != Stage::Release)
+            {
                 continue; // common tone: hold
             }
             // reuse a releasing voice with the same note, else the quietest free/oldest voice
@@ -319,7 +352,15 @@ impl ChordSlot {
     }
 
     /// Render into stereo buses (accumulate). `rev`/`dly` are mono send buses.
-    pub fn render(&mut self, out_l: &mut [f32], out_r: &mut [f32], rev: &mut [f32], dly: &mut [f32], p: &SlotParams, sr: f32) {
+    pub fn render(
+        &mut self,
+        out_l: &mut [f32],
+        out_r: &mut [f32],
+        rev: &mut [f32],
+        dly: &mut [f32],
+        p: &SlotParams,
+        sr: f32,
+    ) {
         let n = out_l.len().min(MAX_BLOCK);
         // arp handling
         if p.arp && self.count > 0 {
@@ -351,13 +392,25 @@ impl ChordSlot {
             // still advance envelopes so releases finish, but output nothing
             for v in self.voices.iter_mut() {
                 if v.active() {
-                    v.render(&mut self.voice_buf[..n], &mut self.env_buf[..n], &mut self.tmp[..n], &self.inst, &self.osc, 1000.0, sr);
+                    v.render(
+                        &mut self.voice_buf[..n],
+                        &mut self.env_buf[..n],
+                        &mut self.tmp[..n],
+                        &self.inst,
+                        &self.osc,
+                        1000.0,
+                        sr,
+                    );
                 }
             }
             return;
         }
         let range = self.inst.filter.cutoff_range;
-        let cutoff_hz = range[0] * libm::powf((range[1] / range[0]).max(1.0), self.cutoff_s.clamp(0.0, 1.0));
+        let cutoff_hz = range[0]
+            * libm::powf(
+                (range[1] / range[0]).max(1.0),
+                self.cutoff_s.clamp(0.0, 1.0),
+            );
         let gain = self.vol_s * p.gain * self.inst.gain * 0.35;
         if gain <= 1e-5 && !self.voices.iter().any(|v| v.active()) {
             return;
@@ -369,8 +422,20 @@ impl ChordSlot {
         let mut right_mix = [0.0f32; MAX_BLOCK];
         for (i, v) in self.voices.iter_mut().enumerate() {
             let is_bass = i == BASS_VOICE;
-            let fc = if is_bass { cutoff_hz.min(1800.0) } else { cutoff_hz };
-            if v.render(&mut self.voice_buf[..n], &mut self.env_buf[..n], &mut self.tmp[..n], &self.inst, &self.osc, fc, sr) {
+            let fc = if is_bass {
+                cutoff_hz.min(1800.0)
+            } else {
+                cutoff_hz
+            };
+            if v.render(
+                &mut self.voice_buf[..n],
+                &mut self.env_buf[..n],
+                &mut self.tmp[..n],
+                &self.inst,
+                &self.osc,
+                fc,
+                sr,
+            ) {
                 any = true;
                 let pan = (self.pan_s + v.spread * 0.4).clamp(-1.0, 1.0);
                 let (gl, gr) = pan_gains(pan);
@@ -438,7 +503,18 @@ impl ThereminVoice {
         self.inst = inst;
     }
 
-    pub fn render(&mut self, out_l: &mut [f32], out_r: &mut [f32], rev: &mut [f32], on: bool, pitch_hz: f32, volume: f32, vibrato: f32, cutoff: f32, sr: f32) {
+    pub fn render(
+        &mut self,
+        out_l: &mut [f32],
+        out_r: &mut [f32],
+        rev: &mut [f32],
+        on: bool,
+        pitch_hz: f32,
+        volume: f32,
+        vibrato: f32,
+        cutoff: f32,
+        sr: f32,
+    ) {
         let n = out_l.len().min(MAX_BLOCK);
         if on && volume > 0.001 {
             if !self.env.active() {
@@ -467,13 +543,27 @@ impl ThereminVoice {
                 continue;
             }
             let ff = f * libm::exp2f(o.octave as f32 + o.detune / 1200.0);
-            kernel::osc_block(&mut self.tmp[..n], &mut self.phase[k], (ff / sr).min(0.49), o.wave.kernel_id());
+            kernel::osc_block(
+                &mut self.tmp[..n],
+                &mut self.phase[k],
+                (ff / sr).min(0.49),
+                o.wave.kernel_id(),
+            );
             kernel::mix_add(&mut self.buf[..n], &self.tmp[..n], o.level);
         }
         let range = self.inst.filter.cutoff_range;
-        let fc = range[0] * libm::powf((range[1] / range[0]).max(1.0), self.cutoff_s.clamp(0.0, 1.0));
+        let fc = range[0]
+            * libm::powf(
+                (range[1] / range[0]).max(1.0),
+                self.cutoff_s.clamp(0.0, 1.0),
+            );
         let g = libm::tanf(core::f32::consts::PI * fc.clamp(20.0, sr * 0.45) / sr);
-        kernel::svf_lp_block(&mut self.buf[..n], &mut self.filt, g, 2.0 - 2.0 * self.inst.filter.res);
+        kernel::svf_lp_block(
+            &mut self.buf[..n],
+            &mut self.filt,
+            g,
+            2.0 - 2.0 * self.inst.filter.res,
+        );
         self.env.render(&mut self.env_buf[..n], &self.inst.env, sr);
         for i in 0..n {
             self.buf[i] *= self.env_buf[i];
@@ -497,7 +587,14 @@ pub struct Metronome {
 
 impl Metronome {
     pub fn new() -> Self {
-        Self { remaining: 0, phase: 0.0, inc: 0.0, amp: 0.0, volume: 0.6, enabled: true }
+        Self {
+            remaining: 0,
+            phase: 0.0,
+            inc: 0.0,
+            amp: 0.0,
+            volume: 0.6,
+            enabled: true,
+        }
     }
 
     /// Schedule a click starting at the given offset within the next rendered block.
@@ -550,7 +647,9 @@ pub struct Synth {
 
 impl Synth {
     pub fn new(sr: f32) -> Self {
-        let slots = (0..SLOTS).map(|_| ChordSlot::new(Instrument::default())).collect();
+        let slots = (0..SLOTS)
+            .map(|_| ChordSlot::new(Instrument::default()))
+            .collect();
         Self {
             sr,
             slots,
@@ -571,21 +670,55 @@ impl Synth {
 
     /// Render one block (<= MAX_BLOCK). `out_l/out_r` are overwritten; `cue` is
     /// overwritten with the metronome (callers mix it as they like).
-    pub fn render(&mut self, out_l: &mut [f32], out_r: &mut [f32], params: &[SlotParams; SLOTS], theremin: Option<(f32, f32, f32, f32)>) {
+    pub fn render(
+        &mut self,
+        out_l: &mut [f32],
+        out_r: &mut [f32],
+        params: &[SlotParams; SLOTS],
+        theremin: Option<(f32, f32, f32, f32)>,
+    ) {
         let n = out_l.len().min(MAX_BLOCK);
         out_l[..n].iter_mut().for_each(|v| *v = 0.0);
         out_r[..n].iter_mut().for_each(|v| *v = 0.0);
         self.rev[..n].iter_mut().for_each(|v| *v = 0.0);
         self.dly[..n].iter_mut().for_each(|v| *v = 0.0);
         for (i, slot) in self.slots.iter_mut().enumerate() {
-            slot.render(&mut out_l[..n], &mut out_r[..n], &mut self.rev[..n], &mut self.dly[..n], &params[i], self.sr);
+            slot.render(
+                &mut out_l[..n],
+                &mut out_r[..n],
+                &mut self.rev[..n],
+                &mut self.dly[..n],
+                &params[i],
+                self.sr,
+            );
         }
         match theremin {
-            Some((hz, vol, vib, cutoff)) => self.theremin.render(&mut out_l[..n], &mut out_r[..n], &mut self.rev[..n], true, hz, vol, vib, cutoff, self.sr),
-            None => self.theremin.render(&mut out_l[..n], &mut out_r[..n], &mut self.rev[..n], false, 220.0, 0.0, 0.0, 0.5, self.sr),
+            Some((hz, vol, vib, cutoff)) => self.theremin.render(
+                &mut out_l[..n],
+                &mut out_r[..n],
+                &mut self.rev[..n],
+                true,
+                hz,
+                vol,
+                vib,
+                cutoff,
+                self.sr,
+            ),
+            None => self.theremin.render(
+                &mut out_l[..n],
+                &mut out_r[..n],
+                &mut self.rev[..n],
+                false,
+                220.0,
+                0.0,
+                0.0,
+                0.5,
+                self.sr,
+            ),
         }
         let (rev, dly) = (self.rev, self.dly);
-        self.master.process(&mut out_l[..n], &mut out_r[..n], &rev[..n], &dly[..n]);
+        self.master
+            .process(&mut out_l[..n], &mut out_r[..n], &rev[..n], &dly[..n]);
     }
 }
 
@@ -634,11 +767,18 @@ mod tests {
         let mut r = [0.0f32; 128];
         let mut rev = [0.0f32; 128];
         let mut dly = [0.0f32; 128];
-        let p = SlotParams { volume: 1.0, ..Default::default() };
+        let p = SlotParams {
+            volume: 1.0,
+            ..Default::default()
+        };
         for _ in 0..50 {
             slot.render(&mut l, &mut r, &mut rev, &mut dly, &p, 48_000.0);
         }
-        let ages_before: Vec<(u8, u32)> = slot.voices[..4].iter().filter(|v| v.active()).map(|v| (v.note, v.age)).collect();
+        let ages_before: Vec<(u8, u32)> = slot.voices[..4]
+            .iter()
+            .filter(|v| v.active())
+            .map(|v| (v.note, v.age))
+            .collect();
         slot.chord_on(&[48, 53, 57]); // C stays, E->F, G->A
         let c_voice = slot.voices[..4].iter().find(|v| v.note == 48).unwrap();
         let before = ages_before.iter().find(|(n, _)| *n == 48).unwrap().1;
@@ -673,7 +813,12 @@ mod tests {
         let mut r = [0.0f32; 128];
         let mut rev = [0.0f32; 128];
         let mut dly = [0.0f32; 128];
-        let p = SlotParams { volume: 1.0, arp: true, arp_period: 1024, ..Default::default() };
+        let p = SlotParams {
+            volume: 1.0,
+            arp: true,
+            arp_period: 1024,
+            ..Default::default()
+        };
         let mut seen = std::collections::HashSet::new();
         for _ in 0..40 {
             slot.render(&mut l, &mut r, &mut rev, &mut dly, &p, 48_000.0);

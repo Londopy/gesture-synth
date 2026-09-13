@@ -14,7 +14,11 @@ pub const CC_PAN: u8 = 10;
 
 #[inline]
 pub fn note_on(ch: u8, note: u8, vel: u8) -> [u8; 3] {
-    [0x90 | (ch.saturating_sub(1) & 0x0f), note & 0x7f, vel & 0x7f]
+    [
+        0x90 | (ch.saturating_sub(1) & 0x0f),
+        note & 0x7f,
+        vel & 0x7f,
+    ]
 }
 
 #[inline]
@@ -24,7 +28,11 @@ pub fn note_off(ch: u8, note: u8) -> [u8; 3] {
 
 #[inline]
 pub fn cc(ch: u8, controller: u8, value: f32) -> [u8; 3] {
-    [0xB0 | (ch.saturating_sub(1) & 0x0f), controller & 0x7f, (value.clamp(0.0, 1.0) * 127.0).round() as u8]
+    [
+        0xB0 | (ch.saturating_sub(1) & 0x0f),
+        controller & 0x7f,
+        (value.clamp(0.0, 1.0) * 127.0).round() as u8,
+    ]
 }
 
 /// Fixed-size outgoing MIDI queue filled on the audio thread, drained by the host.
@@ -41,7 +49,10 @@ impl Default for MidiQueue {
 
 impl MidiQueue {
     pub fn new() -> Self {
-        Self { buf: [[0; 3]; 512], len: 0 }
+        Self {
+            buf: [[0; 3]; 512],
+            len: 0,
+        }
     }
     #[inline]
     pub fn push(&mut self, m: [u8; 3]) {
@@ -74,7 +85,11 @@ pub struct ChannelState {
 
 impl ChannelState {
     pub fn new() -> Self {
-        Self { held: [0; 8], count: 0, last_cc: [-1; 3] }
+        Self {
+            held: [0; 8],
+            count: 0,
+            last_cc: [-1; 3],
+        }
     }
 
     pub fn apply(&mut self, ch: u8, e: &Event, use_expression: bool, q: &mut MidiQueue) {
@@ -115,9 +130,21 @@ impl ChannelState {
             Event::BassHit { note } => {
                 q.push(note_on(ch, *note, 110));
             }
-            Event::ParamChange { cutoff, volume, pan } => {
+            Event::ParamChange {
+                cutoff,
+                volume,
+                pan,
+            } => {
                 let vals = [*cutoff, *volume, (*pan + 1.0) * 0.5];
-                let ctrls = [CC_CUTOFF, if use_expression { CC_EXPRESSION } else { CC_VOLUME }, CC_PAN];
+                let ctrls = [
+                    CC_CUTOFF,
+                    if use_expression {
+                        CC_EXPRESSION
+                    } else {
+                        CC_VOLUME
+                    },
+                    CC_PAN,
+                ];
                 for i in 0..3 {
                     let v = (vals[i].clamp(0.0, 1.0) * 127.0).round() as i16;
                     if v != self.last_cc[i] {
@@ -170,7 +197,8 @@ impl SmfTrack {
         self.events.push((tick, bytes));
     }
     fn bytes(mut self) -> Vec<u8> {
-        self.events.sort_by_key(|(t, b)| (*t, if b[0] & 0xf0 == 0x80 { 0 } else { 1 }));
+        self.events
+            .sort_by_key(|(t, b)| (*t, if b[0] & 0xf0 == 0x80 { 0 } else { 1 }));
         let mut data = Vec::new();
         let mut last = 0u32;
         for (t, b) in &self.events {
@@ -197,7 +225,13 @@ fn text_meta(kind: u8, s: &str) -> Vec<u8> {
 
 /// Export loop tracks as a format-1 SMF: one MIDI track per non-empty loop track,
 /// chord steps quantized to the 16th grid (mutes applied), CCs per 16th.
-pub fn tracks_to_smf(tracks: &[Track], transport: &Transport, key: PitchClass, mode: Mode, name: &str) -> Vec<u8> {
+pub fn tracks_to_smf(
+    tracks: &[Track],
+    transport: &Transport,
+    key: PitchClass,
+    mode: Mode,
+    name: &str,
+) -> Vec<u8> {
     let sig = transport.sig;
     let ticks_per_step = PPQ * 4 / sig.unit as u32 / sig.steps_per_beat();
     let mut smf_tracks: Vec<Vec<u8>> = Vec::new();
@@ -206,7 +240,17 @@ pub fn tracks_to_smf(tracks: &[Track], transport: &Transport, key: PitchClass, m
     let mut meta = SmfTrack::new();
     meta.push(0, text_meta(0x03, name));
     let usec_per_quarter = (60_000_000.0 / (transport.bpm as f64 * (4.0 / sig.unit as f64))) as u32;
-    meta.push(0, vec![0xFF, 0x51, 0x03, (usec_per_quarter >> 16) as u8, (usec_per_quarter >> 8) as u8, usec_per_quarter as u8]);
+    meta.push(
+        0,
+        vec![
+            0xFF,
+            0x51,
+            0x03,
+            (usec_per_quarter >> 16) as u8,
+            (usec_per_quarter >> 8) as u8,
+            usec_per_quarter as u8,
+        ],
+    );
     let denom_pow = match sig.unit {
         8 => 3,
         _ => 2,
@@ -216,7 +260,16 @@ pub fn tracks_to_smf(tracks: &[Track], transport: &Transport, key: PitchClass, m
     let fifths = key.fifths_index() as i8;
     let sf = if fifths > 6 { fifths - 12 } else { fifths };
     let sf = if mode == Mode::Minor { sf - 3 } else { sf };
-    meta.push(0, vec![0xFF, 0x59, 0x02, sf as u8, if mode == Mode::Minor { 1 } else { 0 }]);
+    meta.push(
+        0,
+        vec![
+            0xFF,
+            0x59,
+            0x02,
+            sf as u8,
+            if mode == Mode::Minor { 1 } else { 0 },
+        ],
+    );
     smf_tracks.push(meta.bytes());
 
     let global_steps = transport.total_steps() as usize;
@@ -233,12 +286,15 @@ pub fn tracks_to_smf(tracks: &[Track], transport: &Transport, key: PitchClass, m
             let s = gs % tsteps;
             let tick = gs as u32 * ticks_per_step;
             let cell = if tr.step_muted(s) { None } else { cells[s] };
-            let want: Vec<u8> = cell.map(|c| c.notes[..c.count as usize].to_vec()).unwrap_or_default();
+            let want: Vec<u8> = cell
+                .map(|c| c.notes[..c.count as usize].to_vec())
+                .unwrap_or_default();
             for &n in held.iter().filter(|n| !want.contains(n)) {
                 st.push(tick, note_off(ch, n).to_vec());
             }
             for &n in want.iter().filter(|n| !held.contains(n)) {
-                let vel = (40.0 + 80.0 * cell.map(|c| c.volume).unwrap_or(0.8)).clamp(1.0, 127.0) as u8;
+                let vel =
+                    (40.0 + 80.0 * cell.map(|c| c.volume).unwrap_or(0.8)).clamp(1.0, 127.0) as u8;
                 st.push(tick, note_on(ch, n, vel).to_vec());
             }
             held = want;
@@ -247,7 +303,10 @@ pub fn tracks_to_smf(tracks: &[Track], transport: &Transport, key: PitchClass, m
             let cut = tr.curves.cutoff.value_at(pos, tlen, 0.7);
             let vol = tr.curves.volume.value_at(pos, tlen, 0.8) * tr.volume;
             let pan = (tr.curves.pan.value_at(pos, tlen, 0.0) + tr.pan + 1.0) * 0.5;
-            for (i, (ctrl, v)) in [(CC_CUTOFF, cut), (CC_VOLUME, vol), (CC_PAN, pan)].iter().enumerate() {
+            for (i, (ctrl, v)) in [(CC_CUTOFF, cut), (CC_VOLUME, vol), (CC_PAN, pan)]
+                .iter()
+                .enumerate()
+            {
                 let q = (v.clamp(0.0, 1.0) * 127.0).round() as i16;
                 if q != last_cc[i] {
                     last_cc[i] = q;
@@ -283,10 +342,34 @@ mod tests {
     fn channel_state_legato() {
         let mut cs = ChannelState::new();
         let mut q = MidiQueue::new();
-        cs.apply(1, &Event::ChordOn { notes: [48, 52, 55, 0], count: 3, degree: 1, quality: Quality::Major, shape: Shape::Root, octave: 0 }, false, &mut q);
+        cs.apply(
+            1,
+            &Event::ChordOn {
+                notes: [48, 52, 55, 0],
+                count: 3,
+                degree: 1,
+                quality: Quality::Major,
+                shape: Shape::Root,
+                octave: 0,
+            },
+            false,
+            &mut q,
+        );
         assert_eq!(q.len(), 3);
         q.drain().for_each(drop);
-        cs.apply(1, &Event::ChordOn { notes: [48, 53, 57, 0], count: 3, degree: 4, quality: Quality::Major, shape: Shape::Root, octave: 0 }, false, &mut q);
+        cs.apply(
+            1,
+            &Event::ChordOn {
+                notes: [48, 53, 57, 0],
+                count: 3,
+                degree: 4,
+                quality: Quality::Major,
+                shape: Shape::Root,
+                octave: 0,
+            },
+            false,
+            &mut q,
+        );
         let msgs: Vec<[u8; 3]> = q.drain().collect();
         assert_eq!(msgs.len(), 4); // 2 offs + 2 ons, C held
         assert!(msgs.iter().any(|m| *m == note_off(1, 52)));
@@ -301,8 +384,21 @@ mod tests {
         t.set_bpm(120.0);
         t.set_bars(1);
         let mut tr = Track::new(0);
-        tr.events.push(TimedEvent { t: 0, event: Event::ChordOn { notes: [48, 52, 55, 0], count: 3, degree: 1, quality: Quality::Major, shape: Shape::Root, octave: 0 } });
-        tr.events.push(TimedEvent { t: 48_000, event: Event::ChordOff });
+        tr.events.push(TimedEvent {
+            t: 0,
+            event: Event::ChordOn {
+                notes: [48, 52, 55, 0],
+                count: 3,
+                degree: 1,
+                quality: Quality::Major,
+                shape: Shape::Root,
+                octave: 0,
+            },
+        });
+        tr.events.push(TimedEvent {
+            t: 48_000,
+            event: Event::ChordOff,
+        });
         let bytes = tracks_to_smf(&[tr], &t, PitchClass::C, Mode::Major, "test");
         assert_eq!(&bytes[..4], b"MThd");
         assert_eq!(bytes[11], 2); // 2 tracks

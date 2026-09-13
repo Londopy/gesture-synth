@@ -355,7 +355,14 @@ pub fn chord_name(degree: u8, quality: Quality, shape: Shape, settings: VoicingS
 }
 
 /// Absolute chord label like "F maj7" for the given key.
-pub fn absolute_chord_name(key: PitchClass, mode: Mode, degree: u8, quality: Quality, shape: Shape, settings: VoicingSettings) -> String {
+pub fn absolute_chord_name(
+    key: PitchClass,
+    mode: Mode,
+    degree: u8,
+    quality: Quality,
+    shape: Shape,
+    settings: VoicingSettings,
+) -> String {
     let root = PitchClass::from_index(key.index() as i32 + scale_degree_offset(degree, mode));
     let generic = chord_name(degree, quality, shape, settings);
     // strip the roman numeral, keep suffix
@@ -390,7 +397,11 @@ pub fn snap_to_scale(midi: f32, key: PitchClass, mode: Mode) -> f32 {
     let within = rel - oct * 12.0;
     let mut best = scale[0] as f32;
     let mut best_d = f32::MAX;
-    for s in scale.iter().map(|s| *s as f32).chain(core::iter::once(12.0)) {
+    for s in scale
+        .iter()
+        .map(|s| *s as f32)
+        .chain(core::iter::once(12.0))
+    {
         let d = (s - within).abs();
         if d < best_d {
             best_d = d;
@@ -407,35 +418,94 @@ mod tests {
     #[test]
     fn c_major_triads() {
         let s = VoicingSettings::default();
-        let (n, c) = chord_notes(PitchClass::C, Mode::Major, 1, Quality::Major, Shape::Root, 0, s);
+        let (n, c) = chord_notes(
+            PitchClass::C,
+            Mode::Major,
+            1,
+            Quality::Major,
+            Shape::Root,
+            0,
+            s,
+        );
         assert_eq!((&n[..c as usize], c), (&[48u8, 52, 55][..], 3));
-        let (n, c) = chord_notes(PitchClass::C, Mode::Major, 4, Quality::Major, Shape::Seventh, 0, s);
+        let (n, c) = chord_notes(
+            PitchClass::C,
+            Mode::Major,
+            4,
+            Quality::Major,
+            Shape::Seventh,
+            0,
+            s,
+        );
         assert_eq!(&n[..c as usize], &[53, 57, 60, 64]); // F A C E
-        let (n, _) = chord_notes(PitchClass::C, Mode::Major, 5, Quality::Major, Shape::DomOrDim7, 0, s);
+        let (n, _) = chord_notes(
+            PitchClass::C,
+            Mode::Major,
+            5,
+            Quality::Major,
+            Shape::DomOrDim7,
+            0,
+            s,
+        );
         assert_eq!(&n[..4], &[55, 59, 62, 65]); // G B D F
     }
 
     #[test]
     fn inversion_moves_root_up() {
         let s = VoicingSettings::default();
-        let (n, c) = chord_notes(PitchClass::C, Mode::Major, 1, Quality::Major, Shape::Inv1, 0, s);
+        let (n, c) = chord_notes(
+            PitchClass::C,
+            Mode::Major,
+            1,
+            Quality::Major,
+            Shape::Inv1,
+            0,
+            s,
+        );
         assert_eq!(&n[..c as usize], &[52, 55, 60]); // E G C
     }
 
     #[test]
     fn minor_four_finger_setting() {
         let mut s = VoicingSettings::default();
-        let (n, _) = chord_notes(PitchClass::A, Mode::Minor, 1, Quality::Minor, Shape::DomOrDim7, 0, s);
+        let (n, _) = chord_notes(
+            PitchClass::A,
+            Mode::Minor,
+            1,
+            Quality::Minor,
+            Shape::DomOrDim7,
+            0,
+            s,
+        );
         assert_eq!(&n[..4], &[57, 60, 63, 67]); // A C Eb G (m7b5)
         s.minor_four_finger = MinorFourFinger::Dim7;
-        let (n, _) = chord_notes(PitchClass::A, Mode::Minor, 1, Quality::Minor, Shape::DomOrDim7, 0, s);
+        let (n, _) = chord_notes(
+            PitchClass::A,
+            Mode::Minor,
+            1,
+            Quality::Minor,
+            Shape::DomOrDim7,
+            0,
+            s,
+        );
         assert_eq!(&n[..4], &[57, 60, 63, 66]); // dim7
     }
 
     #[test]
     fn octave_and_open_voicing() {
-        let s = VoicingSettings { open_voicing: true, ..Default::default() };
-        let (n, c) = chord_notes(PitchClass::C, Mode::Major, 1, Quality::Major, Shape::Root, 1, s);
+        let s = VoicingSettings {
+            open_voicing: true,
+            ..Default::default()
+        };
+        let (n, c) = chord_notes(
+            PitchClass::C,
+            Mode::Major,
+            1,
+            Quality::Major,
+            Shape::Root,
+            1,
+            s,
+        );
         assert_eq!(&n[..c as usize], &[60, 67, 76]); // C4 G4 E5
     }
 
@@ -443,10 +513,26 @@ mod tests {
     fn names() {
         let s = VoicingSettings::default();
         assert_eq!(chord_name(4, Quality::Major, Shape::Seventh, s), "IV maj7");
-        assert_eq!(chord_name(4, Quality::Major, Shape::Inv1, s), "IV / 1st inv");
+        assert_eq!(
+            chord_name(4, Quality::Major, Shape::Inv1, s),
+            "IV / 1st inv"
+        );
         assert_eq!(chord_name(2, Quality::Minor, Shape::Seventh, s), "ii m7");
-        assert_eq!(chord_name(7, Quality::Diminished, Shape::Root, s), "vii\u{00B0} dim");
-        assert_eq!(absolute_chord_name(PitchClass::C, Mode::Major, 5, Quality::Major, Shape::DomOrDim7, s), "G dom7");
+        assert_eq!(
+            chord_name(7, Quality::Diminished, Shape::Root, s),
+            "vii\u{00B0} dim"
+        );
+        assert_eq!(
+            absolute_chord_name(
+                PitchClass::C,
+                Mode::Major,
+                5,
+                Quality::Major,
+                Shape::DomOrDim7,
+                s
+            ),
+            "G dom7"
+        );
         assert_eq!(note_name(60), "C4");
     }
 

@@ -16,7 +16,7 @@
 //! (AudioWorklet + main thread) via `gsyn-wasm`. Nothing in the audio path allocates.
 
 #![forbid(unsafe_op_in_unsafe_fn)]
-#![allow(clippy::too_many_arguments)]
+#![allow(clippy::too_many_arguments, clippy::needless_range_loop)]
 
 pub mod curve;
 pub mod engine;

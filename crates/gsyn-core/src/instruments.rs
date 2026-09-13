@@ -38,7 +38,12 @@ pub struct OscSpec {
 
 impl Default for OscSpec {
     fn default() -> Self {
-        Self { wave: Wave::Saw, detune: 0.0, level: 0.5, octave: 0 }
+        Self {
+            wave: Wave::Saw,
+            detune: 0.0,
+            level: 0.5,
+            octave: 0,
+        }
     }
 }
 
@@ -56,7 +61,12 @@ pub struct Envelope {
 
 impl Default for Envelope {
     fn default() -> Self {
-        Self { a: 0.01, d: 0.2, s: 0.8, r: 0.3 }
+        Self {
+            a: 0.01,
+            d: 0.2,
+            s: 0.8,
+            r: 0.3,
+        }
     }
 }
 
@@ -79,7 +89,11 @@ pub struct FilterSpec {
 
 impl Default for FilterSpec {
     fn default() -> Self {
-        Self { kind: FilterType::Lowpass, res: 0.2, cutoff_range: [200.0, 12_000.0] }
+        Self {
+            kind: FilterType::Lowpass,
+            res: 0.2,
+            cutoff_range: [200.0, 12_000.0],
+        }
     }
 }
 
@@ -93,7 +107,10 @@ pub struct FxSend {
 
 impl Default for FxSend {
     fn default() -> Self {
-        Self { reverb: 0.25, delay: 0.0 }
+        Self {
+            reverb: 0.25,
+            delay: 0.0,
+        }
     }
 }
 
@@ -126,14 +143,21 @@ impl Instrument {
     /// Two oscillator specs for the voice (pads the list if the preset has one).
     pub fn osc_pair(&self) -> [OscSpec; 2] {
         let a = self.osc.first().copied().unwrap_or_default();
-        let b = self.osc.get(1).copied().unwrap_or(OscSpec { level: 0.0, ..a });
+        let b = self
+            .osc
+            .get(1)
+            .copied()
+            .unwrap_or(OscSpec { level: 0.0, ..a });
         [a, b]
     }
 
     /// Find a built-in preset by name (case-insensitive).
     pub fn builtin(name: &str) -> Option<Instrument> {
         let n = name.trim().to_ascii_lowercase();
-        BUILTIN_NAMES.iter().position(|b| b.to_ascii_lowercase() == n).map(|i| builtin_by_index(i))
+        BUILTIN_NAMES
+            .iter()
+            .position(|b| b.to_ascii_lowercase() == n)
+            .map(builtin_by_index)
     }
 }
 
@@ -159,12 +183,34 @@ pub fn pad() -> Instrument {
     Instrument {
         name: "Pad".into(),
         osc: vec![
-            OscSpec { wave: Wave::Saw, detune: -7.0, level: 0.45, octave: 0 },
-            OscSpec { wave: Wave::Saw, detune: 7.0, level: 0.45, octave: 0 },
+            OscSpec {
+                wave: Wave::Saw,
+                detune: -7.0,
+                level: 0.45,
+                octave: 0,
+            },
+            OscSpec {
+                wave: Wave::Saw,
+                detune: 7.0,
+                level: 0.45,
+                octave: 0,
+            },
         ],
-        env: Envelope { a: 0.35, d: 0.4, s: 0.85, r: 1.2 },
-        filter: FilterSpec { kind: FilterType::Lowpass, res: 0.25, cutoff_range: [180.0, 9_000.0] },
-        fx: FxSend { reverb: 0.45, delay: 0.12 },
+        env: Envelope {
+            a: 0.35,
+            d: 0.4,
+            s: 0.85,
+            r: 1.2,
+        },
+        filter: FilterSpec {
+            kind: FilterType::Lowpass,
+            res: 0.25,
+            cutoff_range: [180.0, 9_000.0],
+        },
+        fx: FxSend {
+            reverb: 0.45,
+            delay: 0.12,
+        },
         gain: 0.8,
         glide: 0.0,
     }
@@ -174,12 +220,34 @@ pub fn keys() -> Instrument {
     Instrument {
         name: "Keys".into(),
         osc: vec![
-            OscSpec { wave: Wave::Sine, detune: 0.0, level: 0.7, octave: 0 },
-            OscSpec { wave: Wave::Triangle, detune: 3.0, level: 0.35, octave: 1 },
+            OscSpec {
+                wave: Wave::Sine,
+                detune: 0.0,
+                level: 0.7,
+                octave: 0,
+            },
+            OscSpec {
+                wave: Wave::Triangle,
+                detune: 3.0,
+                level: 0.35,
+                octave: 1,
+            },
         ],
-        env: Envelope { a: 0.004, d: 1.4, s: 0.25, r: 0.5 },
-        filter: FilterSpec { kind: FilterType::Lowpass, res: 0.1, cutoff_range: [400.0, 8_000.0] },
-        fx: FxSend { reverb: 0.3, delay: 0.0 },
+        env: Envelope {
+            a: 0.004,
+            d: 1.4,
+            s: 0.25,
+            r: 0.5,
+        },
+        filter: FilterSpec {
+            kind: FilterType::Lowpass,
+            res: 0.1,
+            cutoff_range: [400.0, 8_000.0],
+        },
+        fx: FxSend {
+            reverb: 0.3,
+            delay: 0.0,
+        },
         gain: 0.9,
         glide: 0.0,
     }
@@ -189,12 +257,34 @@ pub fn organ() -> Instrument {
     Instrument {
         name: "Organ".into(),
         osc: vec![
-            OscSpec { wave: Wave::Square, detune: 0.0, level: 0.4, octave: 0 },
-            OscSpec { wave: Wave::Sine, detune: 0.0, level: 0.5, octave: 1 },
+            OscSpec {
+                wave: Wave::Square,
+                detune: 0.0,
+                level: 0.4,
+                octave: 0,
+            },
+            OscSpec {
+                wave: Wave::Sine,
+                detune: 0.0,
+                level: 0.5,
+                octave: 1,
+            },
         ],
-        env: Envelope { a: 0.01, d: 0.05, s: 1.0, r: 0.08 },
-        filter: FilterSpec { kind: FilterType::Lowpass, res: 0.05, cutoff_range: [600.0, 10_000.0] },
-        fx: FxSend { reverb: 0.2, delay: 0.0 },
+        env: Envelope {
+            a: 0.01,
+            d: 0.05,
+            s: 1.0,
+            r: 0.08,
+        },
+        filter: FilterSpec {
+            kind: FilterType::Lowpass,
+            res: 0.05,
+            cutoff_range: [600.0, 10_000.0],
+        },
+        fx: FxSend {
+            reverb: 0.2,
+            delay: 0.0,
+        },
         gain: 0.7,
         glide: 0.0,
     }
@@ -204,12 +294,34 @@ pub fn pluck() -> Instrument {
     Instrument {
         name: "Pluck".into(),
         osc: vec![
-            OscSpec { wave: Wave::Saw, detune: 0.0, level: 0.6, octave: 0 },
-            OscSpec { wave: Wave::Square, detune: -5.0, level: 0.25, octave: 0 },
+            OscSpec {
+                wave: Wave::Saw,
+                detune: 0.0,
+                level: 0.6,
+                octave: 0,
+            },
+            OscSpec {
+                wave: Wave::Square,
+                detune: -5.0,
+                level: 0.25,
+                octave: 0,
+            },
         ],
-        env: Envelope { a: 0.002, d: 0.35, s: 0.0, r: 0.25 },
-        filter: FilterSpec { kind: FilterType::Lowpass, res: 0.35, cutoff_range: [300.0, 7_000.0] },
-        fx: FxSend { reverb: 0.3, delay: 0.35 },
+        env: Envelope {
+            a: 0.002,
+            d: 0.35,
+            s: 0.0,
+            r: 0.25,
+        },
+        filter: FilterSpec {
+            kind: FilterType::Lowpass,
+            res: 0.35,
+            cutoff_range: [300.0, 7_000.0],
+        },
+        fx: FxSend {
+            reverb: 0.3,
+            delay: 0.35,
+        },
         gain: 0.9,
         glide: 0.0,
     }
@@ -219,12 +331,34 @@ pub fn bass() -> Instrument {
     Instrument {
         name: "Bass".into(),
         osc: vec![
-            OscSpec { wave: Wave::Saw, detune: 0.0, level: 0.6, octave: -1 },
-            OscSpec { wave: Wave::Sine, detune: 0.0, level: 0.5, octave: -1 },
+            OscSpec {
+                wave: Wave::Saw,
+                detune: 0.0,
+                level: 0.6,
+                octave: -1,
+            },
+            OscSpec {
+                wave: Wave::Sine,
+                detune: 0.0,
+                level: 0.5,
+                octave: -1,
+            },
         ],
-        env: Envelope { a: 0.005, d: 0.3, s: 0.6, r: 0.15 },
-        filter: FilterSpec { kind: FilterType::Lowpass, res: 0.3, cutoff_range: [80.0, 2_500.0] },
-        fx: FxSend { reverb: 0.05, delay: 0.0 },
+        env: Envelope {
+            a: 0.005,
+            d: 0.3,
+            s: 0.6,
+            r: 0.15,
+        },
+        filter: FilterSpec {
+            kind: FilterType::Lowpass,
+            res: 0.3,
+            cutoff_range: [80.0, 2_500.0],
+        },
+        fx: FxSend {
+            reverb: 0.05,
+            delay: 0.0,
+        },
         gain: 0.9,
         glide: 0.03,
     }
@@ -234,12 +368,34 @@ pub fn lead() -> Instrument {
     Instrument {
         name: "Lead".into(),
         osc: vec![
-            OscSpec { wave: Wave::Sine, detune: 0.0, level: 0.8, octave: 0 },
-            OscSpec { wave: Wave::Triangle, detune: 0.0, level: 0.25, octave: 0 },
+            OscSpec {
+                wave: Wave::Sine,
+                detune: 0.0,
+                level: 0.8,
+                octave: 0,
+            },
+            OscSpec {
+                wave: Wave::Triangle,
+                detune: 0.0,
+                level: 0.25,
+                octave: 0,
+            },
         ],
-        env: Envelope { a: 0.06, d: 0.1, s: 1.0, r: 0.25 },
-        filter: FilterSpec { kind: FilterType::Lowpass, res: 0.15, cutoff_range: [300.0, 9_000.0] },
-        fx: FxSend { reverb: 0.35, delay: 0.2 },
+        env: Envelope {
+            a: 0.06,
+            d: 0.1,
+            s: 1.0,
+            r: 0.25,
+        },
+        filter: FilterSpec {
+            kind: FilterType::Lowpass,
+            res: 0.15,
+            cutoff_range: [300.0, 9_000.0],
+        },
+        fx: FxSend {
+            reverb: 0.35,
+            delay: 0.2,
+        },
         gain: 0.9,
         glide: 0.08,
     }
@@ -249,12 +405,34 @@ pub fn choir() -> Instrument {
     Instrument {
         name: "Choir".into(),
         osc: vec![
-            OscSpec { wave: Wave::Triangle, detune: -9.0, level: 0.5, octave: 0 },
-            OscSpec { wave: Wave::Saw, detune: 9.0, level: 0.2, octave: 0 },
+            OscSpec {
+                wave: Wave::Triangle,
+                detune: -9.0,
+                level: 0.5,
+                octave: 0,
+            },
+            OscSpec {
+                wave: Wave::Saw,
+                detune: 9.0,
+                level: 0.2,
+                octave: 0,
+            },
         ],
-        env: Envelope { a: 0.5, d: 0.5, s: 0.9, r: 1.5 },
-        filter: FilterSpec { kind: FilterType::Lowpass, res: 0.4, cutoff_range: [250.0, 3_500.0] },
-        fx: FxSend { reverb: 0.6, delay: 0.1 },
+        env: Envelope {
+            a: 0.5,
+            d: 0.5,
+            s: 0.9,
+            r: 1.5,
+        },
+        filter: FilterSpec {
+            kind: FilterType::Lowpass,
+            res: 0.4,
+            cutoff_range: [250.0, 3_500.0],
+        },
+        fx: FxSend {
+            reverb: 0.6,
+            delay: 0.1,
+        },
         gain: 0.85,
         glide: 0.0,
     }

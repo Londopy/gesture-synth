@@ -1,0 +1,13 @@
+* text=auto eol=lf
+*.rs text
+*.ts text
+*.svelte text
+*.zig text
+*.gleam text
+*.json text
+*.md text
+*.png binary
+*.ico binary
+*.icns binary
+*.task binary
+*.wasm binary

@@ -87,7 +87,11 @@ struct Allpass {
 
 impl Allpass {
     fn new(len: usize, g: f32) -> Self {
-        Self { buf: vec![0.0; len.max(1)], pos: 0, g }
+        Self {
+            buf: vec![0.0; len.max(1)],
+            pos: 0,
+            g,
+        }
     }
     #[inline]
     fn run(&mut self, x: f32) -> f32 {
@@ -116,10 +120,18 @@ impl FdnReverb {
         let k = sample_rate / 48_000.0;
         let lens = [1557.0, 1917.0, 2269.0, 2647.0].map(|l: f32| (l * k) as usize);
         Self {
-            lines: [vec![0.0; lens[0]], vec![0.0; lens[1]], vec![0.0; lens[2]], vec![0.0; lens[3]]],
+            lines: [
+                vec![0.0; lens[0]],
+                vec![0.0; lens[1]],
+                vec![0.0; lens[2]],
+                vec![0.0; lens[3]],
+            ],
             pos: [0; 4],
             damp: [OnePole::default(); 4],
-            diffuse: [Allpass::new((347.0 * k) as usize, 0.6), Allpass::new((113.0 * k) as usize, 0.55)],
+            diffuse: [
+                Allpass::new((347.0 * k) as usize, 0.6),
+                Allpass::new((113.0 * k) as usize, 0.55),
+            ],
             size: 0.8,
             damping: 0.25,
             mix: 1.0,
@@ -179,8 +191,16 @@ impl Limiter {
     pub fn process(&mut self, l: &mut [f32], r: &mut [f32]) {
         for i in 0..l.len() {
             let peak = l[i].abs().max(r[i].abs());
-            let target = if peak > self.threshold { self.threshold / peak } else { 1.0 };
-            let c = if target < self.gain { self.attack } else { self.release };
+            let target = if peak > self.threshold {
+                self.threshold / peak
+            } else {
+                1.0
+            };
+            let c = if target < self.gain {
+                self.attack
+            } else {
+                self.release
+            };
             self.gain += (target - self.gain) * c;
             l[i] *= self.gain;
             r[i] *= self.gain;

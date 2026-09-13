@@ -1,0 +1,115 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  core:
+    name: Rust core
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo fmt -p gsyn-core -p gsyn-wasm --check
+      - run: cargo clippy -p gsyn-core -- -D warnings
+      - run: cargo test -p gsyn-core
+
+  core-zig:
+    name: Rust core with Zig kernel
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: mlugg/setup-zig@v2
+        with:
+          version: 0.16.0
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo test -p gsyn-core --features zig
+      - name: Zig kernel tests
+        working-directory: crates/gsyn-zig
+        run: zig build test
+      - name: Zig kernel builds for wasm32
+        working-directory: crates/gsyn-zig
+        run: zig build -Dtarget=wasm32-freestanding -Doptimize=ReleaseFast
+
+  web:
+    name: Web app
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: node scripts/fetch-models.mjs --copy-only
+      - run: npm run wasm
+      - name: Type check
+        working-directory: app
+        run: npx svelte-check --tsconfig ./tsconfig.json
+      - name: Unit tests
+        working-directory: app
+        run: npx vitest run
+      - name: Build
+        working-directory: app
+        run: npx vite build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: web-dist
+          path: app/dist
+
+  community:
+    name: Community service
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: erlef/setup-beam@v1
+        with:
+          otp-version: "27"
+          gleam-version: "1.18"
+      - working-directory: services/community
+        run: gleam format --check src test
+      - working-directory: services/community
+        run: gleam test
+
+  desktop:
+    name: Desktop shell compiles
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Tauri Linux prerequisites
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libasound2-dev
+      - run: mkdir -p app/dist && echo '<!doctype html><title>ci</title>' > app/dist/index.html
+      - run: cargo check -p gesture-synth
+
+  changelog:
+    name: Changelog validates
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install patchnotes
+      - run: patchnotes CHANGELOG.md validate

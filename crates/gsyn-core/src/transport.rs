@@ -29,7 +29,10 @@ impl TimeSig {
     ];
 
     pub fn new(beats: u8, unit: u8) -> Self {
-        Self { beats: beats.clamp(1, 16), unit: if unit == 8 { 8 } else { 4 } }
+        Self {
+            beats: beats.clamp(1, 16),
+            unit: if unit == 8 { 8 } else { 4 },
+        }
     }
 
     pub fn parse(s: &str) -> Option<Self> {
@@ -280,7 +283,14 @@ impl Transport {
                 if remaining == 0 {
                     // loop starts exactly at the next block boundary; emit the
                     // downbeat tick now at offset n (callers treat offset==n as "next sample")
-                    ticks.push(BeatTick { offset: n, beat: 0, bar: 0, is_bar_start: true, is_count_in: false, is_loop_start: true });
+                    ticks.push(BeatTick {
+                        offset: n,
+                        beat: 0,
+                        bar: 0,
+                        is_bar_start: true,
+                        is_count_in: false,
+                        is_loop_start: true,
+                    });
                     return (ticks, false);
                 }
             } else {
@@ -331,7 +341,12 @@ impl Transport {
         let bar = beat_idx / self.sig.beats as u32 + 1;
         let beat = beat_idx % self.sig.beats as u32 + 1;
         let step = (self.position as f64 / self.samples_per_step()).floor() as u32;
-        (bar, beat, step.min(self.total_steps().saturating_sub(1)), (beat_f - beat_f.floor()) as f32)
+        (
+            bar,
+            beat,
+            step.min(self.total_steps().saturating_sub(1)),
+            (beat_f - beat_f.floor()) as f32,
+        )
     }
 
     /// Current count-in number to draw large (1..beats), if counting in.
