@@ -13,6 +13,7 @@
   import Calibration from '../lib/ui/Calibration.svelte';
   import { achievements } from '../lib/achievements/store.svelte';
   import MadeBy from '../lib/ui/MadeBy.svelte';
+  import { stage } from '../lib/stage/stage.svelte';
 
   let cameras = $state<MediaDeviceInfo[]>([]);
   let audioOuts = $state<{ id: string; name: string }[]>([]);
@@ -166,6 +167,18 @@
           {/each}
         </div>
         <button onclick={() => (settings.s.shortcuts = { ...DEFAULT_SHORTCUTS })}>Reset shortcuts</button>
+      </section>
+
+      <section class="glass card col">
+        <h3>Shell</h3>
+        <div class="row wrap">
+          <label class="row"><input type="radio" name="shell" value="studio" bind:group={settings.s.shell} onchange={() => (stage.screen = 'page')} /> Studio: the workstation layout</label>
+          <label class="row"><input type="radio" name="shell" value="stage" bind:group={settings.s.shell} onchange={() => (stage.screen = 'page')} /> Stage: menu, sets and game audio</label>
+        </div>
+        <p class="hint">Stage is the default in the desktop app. On a page, the Menu button (top left) returns to the Stage menu; <kbd>F11</kbd> toggles fullscreen.</p>
+        <label class="row"><input type="checkbox" bind:checked={settings.s.gameAudio} /> Game audio (menu sounds and fanfares, in the current key)</label>
+        <label class="row" style="padding-left:22px">Level <input type="range" min="0" max="1" step="0.05" bind:value={settings.s.gameVolume} disabled={!settings.s.gameAudio} style="width:140px" /> <span class="num">{Math.round(settings.s.gameVolume * 100)}%</span></label>
+        <label class="row" style="padding-left:22px"><input type="checkbox" bind:checked={settings.s.menuMusic} disabled={!settings.s.gameAudio} /> Menu music (the instrument plays a slow loop on the menu when track 4 is free)</label>
       </section>
 
       <section class="glass card col">

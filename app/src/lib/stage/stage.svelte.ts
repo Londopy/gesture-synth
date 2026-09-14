@@ -8,7 +8,8 @@ import { settings } from '../state/settings.svelte';
 export type StageScreen = 'boot' | 'menu' | 'sets' | 'page';
 
 class StageStore {
-  screen = $state<StageScreen>('boot');
+  /** The intro plays until it has been seen three times; after that Stage opens on the menu. */
+  screen = $state<StageScreen>(settings.s.introSeen >= 3 ? 'menu' : 'boot');
   /** song id highlighted on the Sets wheel; survives leaving and coming back */
   selectedSet = $state<string | null>(null);
   /** true while a screen transition is playing (blocks double clicks) */
@@ -16,11 +17,6 @@ class StageStore {
 
   get active(): boolean {
     return settings.s.shell === 'stage';
-  }
-
-  /** Where the app opens: the intro until it has been seen three times, then the menu. */
-  start() {
-    this.screen = settings.s.introSeen >= 3 ? 'menu' : 'boot';
   }
 
   toMenu() {

@@ -18,6 +18,9 @@
   import DemoSheet from './lib/ui/DemoSheet.svelte';
   import DemoBadge from './lib/ui/DemoBadge.svelte';
   import { demo } from './lib/demo/demo.svelte';
+  import StageShell from './lib/stage/StageShell.svelte';
+  import MenuButton from './lib/stage/MenuButton.svelte';
+  import { stage } from './lib/stage/stage.svelte';
   import Toasts from './lib/ui/Toasts.svelte';
   import ConfirmDialog from './lib/ui/ConfirmDialog.svelte';
   import Learn from './routes/Learn.svelte';
@@ -46,6 +49,9 @@
   let sceneCanvas: SceneCanvas;
   const page = $derived(router.route.page);
   const showChrome = $derived(!ui.performance && rt.phase === 'ready');
+  // Stage (the game shell) owns the screen while one of its full-screen
+  // screens is up; on a page the Studio chrome shows with a Menu button.
+  const stageScreen = $derived(settings.s.shell === 'stage' && stage.screen !== 'page');
 
   // key hue drives the chrome accent (spec 9 "Accent colors come from the SCENE")
   $effect(() => {
@@ -111,11 +117,29 @@
     else ui.openDemoPicker();
   });
 
+  // F11: real window fullscreen (the desktop window API when available).
+  async function toggleWindowFullscreen() {
+    if (flags.isTauri) {
+      const { getCurrentWindow } = await import('@tauri-apps/api/window');
+      const w = getCurrentWindow();
+      await w.setFullscreen(!(await w.isFullscreen()));
+    } else if (document.fullscreenElement) await document.exitFullscreen?.().catch(() => {});
+    else await document.documentElement.requestFullscreen?.().catch(() => {});
+  }
+
   function keydown(e: KeyboardEvent) {
+    if (e.key === 'F11') {
+      e.preventDefault();
+      void toggleWindowFullscreen();
+      return;
+    }
     if (ui.tour && e.key === 'Escape') {
       ui.tour = false;
       return;
     }
+    // Stage screens handle their own keys (menu navigation, wheel); the
+    // transport shortcuts must not fire underneath them.
+    if (stageScreen) return;
     // Escape is otherwise "panic"; while a demo plays it means "stop the demo".
     if (demo.active && e.key === 'Escape') {
       ui.demoPicker = false;
@@ -140,15 +164,17 @@
 
 <div class="app" class:perf={ui.performance}>
   <SceneCanvas bind:this={sceneCanvas} learn={learnProvider} />
-  <Hud />
+  {#if !stageScreen}<Hud />{/if}
   {#if demo.active}<DemoBadge />{/if}
 
-  {#if (rt.phase !== 'ready' || !settings.s.firstRunDone) && !demo.active}
+  {#if (rt.phase !== 'ready' || !settings.s.firstRunDone) && !demo.active && !stageScreen}
     <Landing />
   {/if}
 
-  {#if showChrome}
-    <Rail />
+  {#if stageScreen}
+    <StageShell />
+  {:else if showChrome}
+    {#if settings.s.shell === 'stage'}<MenuButton />{:else}<Rail />{/if}
     {#if page === 'play'}
       <TopLeft />
       <TopRight />
