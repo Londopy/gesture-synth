@@ -16,6 +16,8 @@
   import { startMenuMusic, stopMenuMusic } from './menuLoop';
   import { sfx } from './sfx';
   import { stage } from './stage.svelte';
+  import { records } from './records.svelte';
+  import { rankFor } from './score';
 
   type Entry = { label: string; sub: string; go: () => void };
   const entries: Entry[] = [
@@ -24,7 +26,7 @@
     { label: 'Loop', sub: 'the four-track pedal and beat grid', go: () => { stage.openPage('play'); ui.grid = true; } },
     { label: 'Demo', sub: 'watch the app play', go: () => { stage.openPage('play'); if (rt.phase === 'ready') ui.openDemoPicker(); else ui.pendingDemoId = ''; } },
     { label: 'Community', sub: 'loops, songs and presets from others', go: () => stage.openPage('community') },
-    { label: 'Medals', sub: 'what you have earned', go: () => stage.openPage('achievements') },
+    { label: 'Profile', sub: 'rank, best takes, medals', go: () => stage.toProfile() },
     { label: 'Settings', sub: 'audio, camera, gestures, shell', go: () => stage.openPage('settings') },
   ];
 
@@ -76,6 +78,7 @@
   });
 
   const medals = $derived(achievements.unlocked.length);
+  const rank = $derived(rankFor(records.xp + achievements.points * 10));
 </script>
 
 <svelte:window onkeydown={onKey} onpointerdown={() => { if (!started) void wake(); }} />
@@ -83,7 +86,7 @@
 <div class="menu">
   <div class="brand">
     <div class="display title">GESTURE SYNTH</div>
-    <div class="sm num dim">{medals}/{MEDALS.length} medals · {achievements.points} pts</div>
+    <div class="sm num dim">{rank.rank} {rank.step}/5 · {medals}/{MEDALS.length} medals · {records.sets} sets</div>
   </div>
 
   <div class="keys" role="menu" aria-label="Main menu">

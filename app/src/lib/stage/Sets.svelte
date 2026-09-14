@@ -12,6 +12,8 @@
   import { rt } from '../state/engine.svelte';
   import { store } from '../storage/store';
   import { difficultyOf, DIFFICULTY_LABELS } from './difficulty';
+  import { records } from './records.svelte';
+  import { RATING_INFO, VARIATIONS, type VariationId } from './score';
   import { borrow, release } from './menuLoop';
   import { sfx } from './sfx';
   import { stage } from './stage.svelte';
@@ -94,10 +96,16 @@
   function play(s: Song) {
     sfx.confirm();
     release('preview');
+    stage.playSet(s.id ?? s.name);
+  }
+  function practise(s: Song) {
+    sfx.click();
+    release('preview');
     stage.selectedSet = s.id ?? null;
     stage.screen = 'page';
     router.navigate({ page: 'learn', kind: 'learn', id: s.id });
   }
+  const VAR_IDS = Object.keys(VARIATIONS) as VariationId[];
   function watch(s: Song) {
     sfx.click();
     release('preview');
@@ -182,6 +190,7 @@
 
   {#if selected}
     {@const d = difficultyOf(selected)}
+    {@const best = records.best(selected.id ?? selected.name)}
     <aside class="detail glass strong fade-in">
       <div class="display name">{selected.name}</div>
       <div class="sm num dim">{selected.key} {selected.mode} · {selected.time_sig} · {selected.bpm} BPM · {selected.bars} bars · {selected.instrument ?? 'Pad'}</div>
@@ -191,9 +200,16 @@
       </div>
       {#if selected.description}<p class="desc">{selected.description}</p>{/if}
       <div class="row wrap" style="gap:4px">{#each selected.tags.filter((t) => t !== 'builtin') as t}<span class="chip">{t}</span>{/each}</div>
-      <div class="kv"><span>Best take</span><span class="dim">not rated yet</span></div>
-      <div class="row" style="gap:8px; margin-top:6px">
+      <div class="kv"><span>Best take</span>{#if best}<span><b class="acc">{RATING_INFO[best.rating].label}</b> · {(best.accuracy * 100).toFixed(1)}% · run {best.bestRun}</span>{:else}<span class="dim">not rated yet</span>{/if}</div>
+      <div class="col" style="gap:4px">
+        <span class="sm dim">Variations</span>
+        <div class="row wrap" style="gap:4px">
+          {#each VAR_IDS as v}<button class="chip vchip" class:on={stage.variations.includes(v)} title={VARIATIONS[v].blurb} onclick={() => { stage.toggleVariation(v); sfx.tick(); }}>{VARIATIONS[v].label} <span class="dim">×{VARIATIONS[v].mult}</span></button>{/each}
+        </div>
+      </div>
+      <div class="row wrap" style="gap:8px; margin-top:6px">
         <button class="primary" onclick={() => play(selected!)}>Play set</button>
+        <button onclick={() => practise(selected!)}>Practise</button>
         <button onclick={() => watch(selected!)} disabled={rt.phase !== 'ready'}>Watch</button>
       </div>
       <p class="hint">{previewing ? 'Previewing on track 4.' : rt.phase !== 'ready' ? 'Start the sound from the menu to hear a preview.' : 'Preview needs an empty track 4 and a stopped transport.'} Scroll or use the arrow keys to turn the wheel; Enter plays.</p>
@@ -363,5 +379,11 @@
     display: flex;
     justify-content: space-between;
     font-size: 12px;
+  }
+  .acc {
+    color: var(--accent);
+  }
+  .vchip {
+    cursor: pointer;
   }
 </style>

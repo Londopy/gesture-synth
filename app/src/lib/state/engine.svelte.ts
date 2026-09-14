@@ -635,6 +635,7 @@ if (typeof window !== 'undefined') {
     achievements: () => import('../achievements/store.svelte').then((m) => m.achievements),
     /** the demo store (lazy: it pulls in the songs and the choreography) */
     demo: () => import('../demo/demo.svelte').then((m) => m.demo),
+    stage: () => import('../stage/stage.svelte').then((m) => m.stage),
     /** the pure demo modules (songs + choreography) for checks that compare the performance against the score */
     demoLib: () => Promise.all([import('../demo/songs'), import('../demo/choreo')]).then(([a, b]) => ({ ...a, ...b })),
     /** a frame as if it came from the camera: goes through the demo's camera gate first */

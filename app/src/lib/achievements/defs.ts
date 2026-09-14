@@ -58,6 +58,10 @@ export interface Stats {
   bestChordsInOneSession: number;
   demosWatched: string[]; // distinct demo ids watched to the end
   demoPlays: number;
+  // Stage sets: how many finished, best rating tier per song (0 rough .. 5 flawless), longest run
+  setsPlayed: number;
+  setRatings: Record<string, number>;
+  bestRun: number;
 }
 
 export function emptyStats(): Stats {
@@ -104,6 +108,9 @@ export function emptyStats(): Stats {
     bestChordsInOneSession: 0,
     demosWatched: [],
     demoPlays: 0,
+    setsPlayed: 0,
+    setRatings: {},
+    bestRun: 0,
   };
 }
 
@@ -160,6 +167,12 @@ export const MEDALS: Medal[] = [
   { id: 'flawless', name: 'Flawless', hint: 'Perfect timing, again and again.', description: 'Eight perfect hits in a row.', category: 'learn', tier: 'gold', icon: '💎', ...counter((s) => s.bestPerfectStreak, 8) },
   { id: 'songwriter', name: 'Songwriter', hint: 'Build something.', description: 'Built a progression and dropped it into a track or a tutorial.', category: 'learn', tier: 'bronze', icon: '✍️', ...counter((s) => s.songsBuilt, 1) },
   { id: 'graduate', name: 'Graduate', hint: 'Finish several tutorials.', description: 'Five tutorials finished.', category: 'learn', tier: 'silver', icon: '🎓', ...counter((s) => s.tutorialsDone, 5) },
+  // ---- stage sets -------------------------------------------------------------
+  { id: 'first_take', name: 'First Take', hint: 'Play a set on Stage.', description: 'Finished your first set.', category: 'learn', tier: 'bronze', icon: '🎙️', ...counter((s) => s.setsPlayed, 1) },
+  { id: 'tight_five', name: 'Tight Five', hint: 'Rate Tight or better on five songs.', description: 'Five songs rated Tight, In the Pocket or Flawless.', category: 'learn', tier: 'silver', icon: '🖐️', ...counter((s) => Object.values(s.setRatings).filter((r) => r >= 3).length, 5) },
+  { id: 'pocket', name: 'In the Pocket', hint: 'A take with almost nothing dropped.', description: 'Rated In the Pocket on any song.', category: 'learn', tier: 'gold', icon: '🕳️', check: (s) => Object.values(s.setRatings).some((r) => r >= 4) },
+  { id: 'flawless_take', name: 'Flawless Take', hint: '', description: 'Rated Flawless on any song: every chord locked or on it.', category: 'learn', tier: 'platinum', icon: '🏆', hidden: true, check: (s) => Object.values(s.setRatings).some((r) => r >= 5) },
+  { id: 'long_run', name: 'Long Run', hint: 'Keep a run going.', description: 'A run of 24 chords without a drop.', category: 'learn', tier: 'silver', icon: '🏃', ...counter((s) => s.bestRun, 24) },
   // ---- exploring -------------------------------------------------------------
   { id: 'eye_candy', name: 'Eye Candy', hint: 'Try every theme.', description: 'Used all five built-in themes.', category: 'explore', tier: 'bronze', icon: '🎨', ...distinct((s) => s.themesUsed.filter((t) => ['Neon', 'Ember', 'Ice', 'Mono', 'Vapor'].includes(t)), 5) },
   { id: 'multi', name: 'Multi-instrumentalist', hint: 'Try every instrument.', description: 'Played all seven built-in instruments.', category: 'explore', tier: 'silver', icon: '🎹', ...distinct((s) => s.instrumentsUsed, 7) },

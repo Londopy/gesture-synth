@@ -5,6 +5,9 @@
   import Boot from './Boot.svelte';
   import MainMenu from './MainMenu.svelte';
   import Sets from './Sets.svelte';
+  import SetPlay from './SetPlay.svelte';
+  import Results from './Results.svelte';
+  import Profile from './Profile.svelte';
   import { stage } from './stage.svelte';
 </script>
 
@@ -14,4 +17,10 @@
   <MainMenu />
 {:else if stage.screen === 'sets'}
   <Sets />
+{:else if stage.screen === 'set'}
+  <SetPlay />
+{:else if stage.screen === 'results'}
+  <Results />
+{:else if stage.screen === 'profile'}
+  <Profile />
 {/if}

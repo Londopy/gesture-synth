@@ -105,6 +105,24 @@ export const sfx = {
       { midi: degreeMidi(1, 1), at: 0.32, dur: 0.6, gain: 0.45 },
     ]);
   },
+  /** Judgment sounds while playing a set: a pluck on the chord root for a hit, a dull thud for a drop. */
+  judge(j: 'locked' | 'onit' | 'early' | 'late' | 'dropped', degree = 1) {
+    if (j === 'dropped') {
+      play([
+        { midi: 38, at: 0, dur: 0.12, gain: 0.35, type: 'square', glideTo: 30 },
+        { midi: 45, at: 0, dur: 0.08, gain: 0.2, type: 'sawtooth', glideTo: 36 },
+      ]);
+    } else if (j === 'locked') play([{ midi: degreeMidi(degree, 1), at: 0, dur: 0.14, gain: 0.45 }]);
+    else if (j === 'onit') play([{ midi: degreeMidi(degree), at: 0, dur: 0.12, gain: 0.38 }]);
+    else play([{ midi: degreeMidi(degree), at: 0, dur: 0.06, gain: 0.22, type: 'sine' }]);
+  },
+  /** A run broke: two falling notes. */
+  runBreak() {
+    play([
+      { midi: degreeMidi(5), at: 0, dur: 0.1, gain: 0.3 },
+      { midi: degreeMidi(1), at: 0.09, dur: 0.16, gain: 0.3 },
+    ]);
+  },
   /** Called from the first user gesture so later sounds are not swallowed by autoplay policy. */
   warm() {
     graph();

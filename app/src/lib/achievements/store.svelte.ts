@@ -57,7 +57,8 @@ export type TrackEvent =
   | { kind: 'session_saved' }
   | { kind: 'tour_done' }
   | { kind: 'secret'; id: string }
-  | { kind: 'demo_watched'; id: string };
+  | { kind: 'demo_watched'; id: string }
+  | { kind: 'set_done'; songId: string; ratingTier: number; bestRun: number };
 
 class Achievements {
   stats = $state<Stats>(load().stats);
@@ -271,6 +272,11 @@ class Achievements {
       case 'demo_watched':
         s.demosWatched = addDistinct(s.demosWatched, e.id);
         s.demoPlays++;
+        break;
+      case 'set_done':
+        s.setsPlayed++;
+        s.setRatings = { ...s.setRatings, [e.songId]: Math.max(s.setRatings[e.songId] ?? 0, e.ratingTier) };
+        s.bestRun = Math.max(s.bestRun, e.bestRun);
         break;
     }
     this.evaluate();

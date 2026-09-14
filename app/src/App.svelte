@@ -157,7 +157,7 @@
 
   // The scene asks for a target outline each frame: the demo's next chord while
   // a demo plays, otherwise Learn's current target.
-  const learnProvider = () => (demo.active ? (settings.s.demoShowNext ? demo.target() : null) : page === 'learn' ? learnState.provider?.() ?? null : null);
+  const learnProvider = () => (demo.active ? (settings.s.demoShowNext ? demo.target() : null) : page === 'learn' || stage.screen === 'set' ? learnState.provider?.() ?? null : null);
 </script>
 
 <svelte:window onkeydown={keydown} />
