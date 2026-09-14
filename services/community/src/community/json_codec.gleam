@@ -5,6 +5,7 @@ import community/store.{
 }
 import gleam/dynamic.{type Dynamic}
 import gleam/dynamic/decode.{type Decoder}
+import gleam/int
 import gleam/json.{type Json}
 import gleam/option.{type Option, None, Some}
 import gleam/time/duration
@@ -231,7 +232,11 @@ pub type ScoreBody {
 pub fn score_decoder() -> Decoder(ScoreBody) {
   use song_id <- decode.field("song_id", decode.string)
   use score <- decode.field("score", decode.int)
-  use accuracy <- decode.field("accuracy", decode.float)
+  // JavaScript writes 1.0 as 1, so a whole number must decode as a float too.
+  use accuracy <- decode.field(
+    "accuracy",
+    decode.one_of(decode.float, or: [decode.int |> decode.map(int.to_float)]),
+  )
   use run <- decode.field("run", decode.int)
   use rating <- decode.field("rating", decode.string)
   use variations <- decode.optional_field(

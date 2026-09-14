@@ -6,6 +6,9 @@
   import { songById } from '../learn/songs';
   import { DEMO_SONGS } from '../demo/songs';
   import { records } from './records.svelte';
+  import { fetchBoard, signedIn } from './board.svelte';
+  import type { BoardEntry } from '../community/api';
+  import { settings } from '../state/settings.svelte';
   import { accuracy, JUDGMENT_INFO, RATING_INFO, rating, VARIATIONS, WINDOWS, type Judgment } from './score';
   import { sfx } from './sfx';
   import { stage } from './stage.svelte';
@@ -14,10 +17,14 @@
   const s = r?.score;
   const rate = $derived(s ? rating(s) : 'rough');
   let revealed = $state(false);
+  let community = $state<BoardEntry[] | null>(null);
+  let communityError = $state('');
   const judgments: Judgment[] = ['locked', 'onit', 'early', 'late', 'dropped'];
   const board = $derived(records.recent.filter((x) => x.songId === r?.songId).sort((a, b) => b.score - a.score).slice(0, 10));
 
   onMount(() => {
+    // the post from the set may still be in flight; give it a moment, then read the board fresh
+    if (r) setTimeout(() => fetchBoard(r.songId, true).then((e) => (community = e)).catch((e) => (communityError = e?.message ?? 'offline')), 1200);
     const t = setTimeout(() => {
       revealed = true;
       if (rate === 'flawless' || rate === 'pocket') sfx.fanfare();
@@ -112,7 +119,17 @@
         </div>
         <div class="col" style="gap:4px; flex:1">
           <span class="sm dim">COMMUNITY BOARD</span>
-          <span class="hint">Coming with the next release.</span>
+          {#if community === null && !communityError}<span class="hint">Loading…</span>
+          {:else if communityError}<span class="hint">Board unavailable right now.</span>
+          {:else if !community?.length}<span class="hint">Nobody has posted this song yet.{#if !signedIn()} Sign in on the Community page to post yours.{/if}</span>
+          {:else}
+            {#each community as e, i (e.id)}
+              <div class="brow" class:me={settings.s.communityToken && e.author?.handle && e.author.handle === settings.s.communityHandle}>
+                <span class="num dim">{i + 1}</span><span>{e.author?.display_name ?? e.author?.handle ?? 'someone'} <span class="dim">· {RATING_INFO[e.rating as keyof typeof RATING_INFO]?.label ?? e.rating}</span></span><span class="num">{(e.accuracy * 100).toFixed(1)}%</span><span class="num">{e.score.toLocaleString()}</span>
+              </div>
+            {/each}
+            {#if !signedIn()}<span class="hint">Sign in on the Community page to post yours.</span>{/if}
+          {/if}
         </div>
       </div>
 

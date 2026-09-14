@@ -18,6 +18,7 @@
   import { store } from '../storage/store';
   import { ensureWasm } from '../tracking/parser';
   import { records } from './records.svelte';
+  import { postSet } from './board.svelte';
   import { accuracy, applyHit, inTheGroove, JUDGMENT_INFO, judgeHit, newSetScore, rating, RATING_ORDER, VARIATIONS, WINDOWS, type Judgment, type SetScore } from './score';
   import { sfx } from './sfx';
   import { stage } from './stage.svelte';
@@ -244,7 +245,9 @@
     // anything never judged is a drop
     for (const t of targets) if (!judged.has(t.index)) score = applyHit(score, { target: t.index, judgment: 'dropped', beat: t.startBeat }, vars);
     const r = rating(score);
-    const rec = records.record({ songId: song.id ?? song.name, songName: song.name, score: score.score, accuracy: accuracy(score), bestRun: score.bestRun, rating: r, variations: vars, at: Date.now() });
+    const entry = { songId: song.id ?? song.name, songName: song.name, score: score.score, accuracy: accuracy(score), bestRun: score.bestRun, rating: r, variations: vars, at: Date.now() };
+    const rec = records.record(entry);
+    void postSet(entry);
     if (!vars.includes('rehearsal')) achievements.track({ kind: 'set_done', songId: song.id ?? song.name, ratingTier: RATING_ORDER.indexOf(r), bestRun: score.bestRun });
     stage.lastResult = { songId: song.id ?? song.name, songName: song.name, score, variations: vars, bpm, newBest: rec.newBest, xpGained: rec.xpGained };
     restore();

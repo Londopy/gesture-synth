@@ -14,6 +14,8 @@
   import { difficultyOf, DIFFICULTY_LABELS } from './difficulty';
   import { records } from './records.svelte';
   import { RATING_INFO, VARIATIONS, type VariationId } from './score';
+  import { fetchBoard } from './board.svelte';
+  import type { BoardEntry } from '../community/api';
   import { borrow, release } from './menuLoop';
   import { sfx } from './sfx';
   import { stage } from './stage.svelte';
@@ -22,6 +24,14 @@
   let view = $state<'wheel' | 'list'>('wheel');
   let q = $state('');
   let previewing = $state(false);
+  let board = $state<BoardEntry[] | null>(null);
+  // Community board for the selected song, fetched lazily and cached a minute.
+  $effect(() => {
+    const id = selected?.id ?? selected?.name;
+    board = null;
+    if (!id) return;
+    fetchBoard(id).then((b) => (board = b)).catch(() => (board = []));
+  });
 
   const songs = $derived<Song[]>([...BUILTIN_SONGS, ...DEMO_SONGS, ...custom]);
   const filtered = $derived(songs.filter((s) => !q || `${s.name} ${s.tags.join(' ')} ${s.key} ${s.mode}`.toLowerCase().includes(q.toLowerCase())));
@@ -200,6 +210,7 @@
       </div>
       {#if selected.description}<p class="desc">{selected.description}</p>{/if}
       <div class="row wrap" style="gap:4px">{#each selected.tags.filter((t) => t !== 'builtin') as t}<span class="chip">{t}</span>{/each}</div>
+      <div class="kv"><span>Community board</span><span class="dim">{board === null ? '…' : board.length ? `${board.length} posted · top ${board[0].score.toLocaleString()} by ${board[0].author?.display_name ?? 'someone'}` : 'nobody yet'}</span></div>
       <div class="kv"><span>Best take</span>{#if best}<span><b class="acc">{RATING_INFO[best.rating].label}</b> · {(best.accuracy * 100).toFixed(1)}% · run {best.bestRun}</span>{:else}<span class="dim">not rated yet</span>{/if}</div>
       <div class="col" style="gap:4px">
         <span class="sm dim">Variations</span>

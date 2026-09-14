@@ -274,6 +274,29 @@ export class CommunityApi {
   share(id: string) {
     return this.req<{ code: string; url: string }>('POST', `/items/${encodeURIComponent(id)}/share`);
   }
+
+  /** Stage board for a song: each player's best set, highest first. */
+  scores(songId: string, limit = 10) {
+    return this.req<{ scores: BoardEntry[] }>('GET', `/scores?song=${encodeURIComponent(songId)}&limit=${limit}`);
+  }
+
+  /** Post a finished set (signed in; rehearsal sets are refused by the server). */
+  postScore(body: { song_id: string; score: number; accuracy: number; run: number; rating: string; variations: string[] }) {
+    return this.req<BoardEntry>('POST', '/scores', body);
+  }
+}
+
+export interface BoardEntry {
+  id: string;
+  user_id: string;
+  song_id: string;
+  score: number;
+  accuracy: number;
+  run: number;
+  rating: string;
+  variations: string[];
+  created_at: string;
+  author?: User;
 }
 
 function attemptSignal(ms: number): AbortSignal | undefined {

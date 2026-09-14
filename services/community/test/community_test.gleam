@@ -917,6 +917,21 @@ pub fn scores_validation_test() {
       Some(token),
     )
   assert huge.status == 400
+  // a perfect accuracy arrives from JavaScript as the integer 1
+  let whole =
+    post(
+      ctx,
+      "/scores",
+      json.object([
+        #("song_id", json.string("four-chords")),
+        #("score", json.int(1272)),
+        #("accuracy", json.int(1)),
+        #("run", json.int(4)),
+        #("rating", json.string("flawless")),
+      ]),
+      Some(token),
+    )
+  assert whole.status == 201
 }
 
 pub fn scores_board_is_best_per_player_test() {
