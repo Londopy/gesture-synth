@@ -76,6 +76,11 @@ ghost hands replaying your loops.
 It ships as a **Tauri desktop app** (native audio thread, MIDI out, ffmpeg
 export) and as a **web app** at the same URL structure (installable PWA,
 offline after first load), from one codebase. Sessions are byte-identical on
+both, so a loop made in the browser opens on desktop and vice versa. The
+desktop app opens in **Stage**, a game shell with a menu, song select on the
+circle of fifths, rated sets and boards; the website opens in **Studio**, the
+workstation layout. Both are one switch apart in Settings.
+
 <p align="center">
   <a href="https://gesture-synth.onrender.com"><b>Try it</b></a> ·
   <a href="#quick-start"><b>Quick start</b></a> ·
@@ -150,10 +155,24 @@ Clear camera view for framing yourself, then record the scene or the raw camera 
 Fifty-five medals from bronze to platinum for playing, looping, learning, exploring, watching and rating sets, plus ten secret gestures.
 
 </td>
+</tr>
+<tr>
 <td valign="top">
 
 ### 🌐 Share
 Publish loops, songs, presets and themes to a community service with likes, comments and remix chains. Export `.mid`, `.wav`, `.gsyn.json`. Short links open straight into the app.
+
+</td>
+<td valign="top">
+
+### 🎮 Stage
+The desktop app's game shell: a menu of seven keys that sound their degree, song select on the circle of fifths, sets rated Rough to Flawless with Run and Groove, boards, a rank ladder. The website keeps the Studio layout.
+
+</td>
+<td valign="top">
+
+### 🎹 Demo
+Press **D** and the app plays one of four songs itself: a synthetic pair of hands goes through the real gesture parser, so what you see is exactly what a player would do. Works without a camera.
 
 </td>
 </tr>
@@ -336,15 +355,17 @@ not audio, so instruments can change after recording and files stay tiny.
 | `crates/gsyn-core` | gesture parser, chord model, synth, sample-accurate transport, event-stream loop pedal, `.gsyn.json` formats, MIDI + SMF, engine | Rust |
 | `crates/gsyn-wasm` | wasm-bindgen surface: parser on the main thread, engine in an AudioWorklet | Rust |
 | `crates/gsyn-zig` | SIMD DSP kernel (oscillators, SVF, mixing, soft clip), linked with `--features zig` | Zig |
-| `app` | Svelte 5 + Three.js frontend, PWA, exports, pages | TypeScript |
+| `app` | Svelte 5 + Three.js frontend, PWA, exports, pages; `lib/demo` (the synthetic performer), `lib/stage` (the game shell) | TypeScript |
 | `src-tauri` | Tauri 2 shell: cpal audio thread, midir MIDI, data folder, ffmpeg sidecar, `gsyn://` links | Rust |
-| `services/community` | accounts, uploads, likes, comments, remix chains, short links | Gleam |
+| `services/community` | accounts, uploads, likes, comments, remix chains, short links, Stage boards | Gleam |
 | `content` | sample songs, instrument and theme files | JSON |
 
 Pages: **Play**, **Learn**, **Song Builder** (type `ii7 V7 Imaj7` or click
 degrees, generate a tutorial or drop it into a track), **Instruments** (live
 preset editor), **Visuals** (five themes plus one you have to unlock),
-**Community**, **Settings**.
+**Community**, **Medals**, **Settings**. Two shells around them: **Studio**
+(the workstation layout, the website's default) and **Stage** (the game shell,
+the desktop default), switchable in Settings.
 
 Exports: `.session.gsyn.json`, `.mid` (one track per loop), `.wav` (offline
 bounce), `.webm` (scene or camera + audio + mic), `.mp4` (ffmpeg sidecar on
@@ -395,17 +416,20 @@ Community service: `cd services/community && gleam run` (in-memory store on
 <br>
 
 ```bash
-npm test                                   # core + frontend
+npm test                                   # core (68) + frontend (106)
 cargo test -p gsyn-core --features zig     # against the Zig kernel
 cd crates/gsyn-zig && zig build test       # kernel + parity with the Rust reference
-cd services/community && gleam test        # 23 HTTP tests
+cd services/community && gleam test        # 34 HTTP tests
 ```
 
 No camera? In the browser console,
 `window.__gsyn.synth(leftMask, rightMask, leftTilt, rightTilt, rightY)` feeds
 synthetic hands through the whole pipeline, and `window.__gsyn.tick()` steps
-one frame. `node scripts/shots.mjs` uses both to take the screenshots on this
-page headlessly.
+one frame. Three scripts build on that against a served build
+(`npm run build && npm run serve`): `node scripts/shots.mjs` takes the
+screenshots on this page, `node scripts/demo-check.mjs` plays every demo song
+and checks each chord lands on its beat, and `node scripts/stage-check.mjs`
+plays a Stage set on the beat and again 150 ms late and checks the ratings.
 
 </details>
 
@@ -415,8 +439,10 @@ page headlessly.
 
 `Space` play/stop · `R` record · `1-4` track · `M`/`S` mute/solo ·
 `Delete` clear · `Tab` theremin · `[`/`]` key · `-`/`=` BPM · `Esc` panic ·
-`F` performance view · `C` view mode · `G` grid · `H` help ·
-`Ctrl/Cmd+Shift+R` record video · `Ctrl/Cmd+S` save · `Ctrl/Cmd+E` export
+`F` performance view · `C` view mode · `G` grid · `H` help · `D` demo ·
+`F11` fullscreen · `Ctrl/Cmd+Shift+R` record video · `Ctrl/Cmd+S` save ·
+`Ctrl/Cmd+E` export. Every shortcut is editable in Settings. In Stage: arrow
+keys and `Enter` drive the menu and the Sets wheel, `Esc` pauses a set.
 
 </details>
 

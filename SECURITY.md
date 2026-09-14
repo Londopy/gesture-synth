@@ -34,7 +34,8 @@ for confirmed issues. Credit is given in the changelog unless you prefer not.
 - The microphone is opened only while you record with the mic option on, and the stream is closed when the recording stops. Recordings are saved where you choose; nothing is uploaded. No video or landmarks leave the device unless you explicitly publish a loop, which includes 15 Hz hand landmarks for ghost playback.
 - Audio is synthesized locally. Nothing is uploaded unless you use Share or Publish.
 - Telemetry is off by default and this build sends none.
-- The community service stores handles, display names, PBKDF2 password hashes, hashed session tokens and the items you publish. Passwords and raw tokens are never stored.
+- The community service stores handles, display names, PBKDF2 password hashes, hashed session tokens, the items you publish and, if you are signed in when a Stage set ends, that set's score, accuracy, run, rating and variations. Passwords and raw tokens are never stored.
+- Stage boards are unverified by design: a score is whatever the client posts, so treat them as a friendly scoreboard, not a competition with stakes. Rehearsal sets are refused server-side.
 
 ## Hardening notes for operators of the community service
 
@@ -42,4 +43,4 @@ for confirmed issues. Credit is given in the changelog unless you prefer not.
 - Set `CORS_ORIGIN` to your frontend origin instead of the default `*`.
 - Set a strong `SECRET_KEY_BASE`.
 - The 2 MB body limit is enforced by wisp; keep a reverse-proxy limit too.
-- There is no rate limiting in the service; add it at the proxy.
+- There is no rate limiting in the service; add it at the proxy. The `POST /scores` endpoint in particular accepts any plausible number from any signed-in user.

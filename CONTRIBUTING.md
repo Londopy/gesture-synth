@@ -32,7 +32,9 @@ Desktop: `npm run tauri:dev`. Community service: `cd services/community && gleam
 | `crates/gsyn-core` | gesture parser, music theory, synth, transport, loop engine, formats, MIDI, engine | Rust |
 | `crates/gsyn-wasm` | wasm-bindgen surface | Rust |
 | `crates/gsyn-zig` | SIMD DSP kernel, optional | Zig |
-| `app/src/lib` | audio (worklet bridge), tracking (MediaPipe, parser bridge), scene (Three.js layers), state (runtime, settings, UI), ui (chrome), export, storage, community client | TypeScript / Svelte 5 |
+| `app/src/lib` | audio (worklet bridge), tracking (MediaPipe, parser bridge), scene (Three.js layers), state (runtime, settings, UI), ui (chrome), export, storage, community client, achievements, eggs (secrets) | TypeScript / Svelte 5 |
+| `app/src/lib/demo` | demo mode: songs with performance hints, choreography compiler, synthetic performer, demo store | TypeScript |
+| `app/src/lib/stage` | Stage game shell: screens, scoring, difficulty, records, game audio, board glue | Svelte 5 / TypeScript |
 | `app/src/routes` | pages | Svelte 5 |
 | `src-tauri` | desktop shell | Rust |
 | `services/community` | community backend | Gleam |
@@ -77,14 +79,17 @@ real parser, worklet engine and scene without a webcam.
 - **A medal**: add it to `MEDALS` in `app/src/lib/achievements/defs.ts` (id, name, hint, description, category, tier, icon, a pure `check` and optional `progress` over `Stats`). If it needs a new statistic, extend `Stats`/`emptyStats` and add a `track()` event in `store.svelte.ts` fired from where it happens. `defs.test.ts` checks every medal has copy and unlocks from empty stats only when it should.
 - **Recording sources**: `app/src/lib/export/recorder.ts` (MediaRecorder) and `RecordSheet.svelte`; audio always comes from the worklet record mix so the metronome stays out.
 - **A file format field**: add it with `#[serde(default)]` so old files still load, bump `FORMAT_VERSION` only for breaking changes, and add a round-trip test in `session.rs`.
-- **A community endpoint**: `services/community/src/community/router.gleam` + handler module + `test/community_test.gleam` + the `CommunityApi` client in `app/src/lib/community/api.ts`.
+- **A community endpoint**: `services/community/src/community/router.gleam` + handler module + `test/community_test.gleam` + the `CommunityApi` client in `app/src/lib/community/api.ts`. If it stores something new, add the table to `sql/schema.sql` with `IF NOT EXISTS` (the service applies the file on startup) and implement it in both `store/memory.gleam` and `store/postgres.gleam`.
+- **A demo song**: `app/src/lib/demo/songs.ts` (a `DemoSong` with per-chord `perf` hints; `validateDemoSong` lists the rules) and its id in `ids.ts`. `songs.test.ts` checks every demo validates; `node scripts/demo-check.mjs` proves each chord lands on its beat through the real parser.
+- **A Stage screen**: a component in `app/src/lib/stage/`, a value in `StageScreen` (`stage.svelte.ts`) and a branch in `StageShell.svelte`. Screens sit over the scene, so keep `pointer-events: none` on the root and `auto` on the interactive children. Use `sfx` for sounds and our own vocabulary (Set, Run, Groove, Take rating, Variations, Rank); nothing borrowed from other games.
+- **Scoring changes**: `app/src/lib/stage/score.ts` is pure and tested in `score.test.ts`; `node scripts/stage-check.mjs` plays a set on the beat and 150 ms late and checks the ratings end to end.
 
 ## Pull requests
 
 1. Branch from `main`, one topic per PR.
 2. Add a line under `## [Unreleased]` in [CHANGELOG.md](CHANGELOG.md) using a Keep a Changelog heading (`Added`, `Changed`, `Deprecated`, `Removed`, `Fixed`, `Security`, `Breaking`). `patchnotes CHANGELOG.md validate` must pass.
 3. Describe what changed and how you tested it. Screenshots or a short clip for anything visual.
-4. CI must be green (core tests, frontend check + tests, Zig tests, Gleam tests).
+4. CI must be green (core tests, frontend check + tests, Zig tests, Gleam tests, changelog validation).
 
 ## Releasing
 

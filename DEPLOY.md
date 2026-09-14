@@ -41,7 +41,8 @@ Free Postgres for `DATABASE_URL`: [Neon](https://neon.tech) or
 [Supabase](https://supabase.com). Paste the connection string as given; the
 service adds the default port, upgrades to verified TLS (`sslmode=verify-full`,
 needed for Neon's SNI routing), and applies `sql/schema.sql` itself on startup
-(every statement is `IF NOT EXISTS`).
+(every statement is `IF NOT EXISTS`, so new tables such as the Stage `scores`
+board arrive with a redeploy and no manual migration).
 
 Required env: `PORT`, `FRONTEND_ORIGIN` (where `/s/<code>` short links
 redirect), `CORS_ORIGIN` (set it to the app origin, not `*`, in production),

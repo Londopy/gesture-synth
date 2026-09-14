@@ -37,6 +37,10 @@ Thumbs.db
 *.wav
 *.mid
 !content/**
+# scratch scripts and temp folders left by local checks
+scripts/.*.tmp.mjs
+.tmp/
+
 # release workflow scratch
 /assets/
 /dist-web/
