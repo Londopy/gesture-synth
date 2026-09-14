@@ -85,4 +85,20 @@ CREATE TABLE IF NOT EXISTS short_links (
   CONSTRAINT short_links_code_length CHECK (char_length(code) = 6)
 );
 
+-- Stage boards: one row per finished set. Boards read the best row per user.
+CREATE TABLE IF NOT EXISTS scores (
+  id         TEXT        PRIMARY KEY,
+  user_id    TEXT        NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  song_id    TEXT        NOT NULL,
+  score      INTEGER     NOT NULL,
+  accuracy   DOUBLE PRECISION NOT NULL,
+  run        INTEGER     NOT NULL,
+  rating     TEXT        NOT NULL,
+  variations TEXT[]      NOT NULL DEFAULT '{}',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  CONSTRAINT scores_song_id_length CHECK (char_length(song_id) BETWEEN 1 AND 80),
+  CONSTRAINT scores_accuracy_range CHECK (accuracy >= 0 AND accuracy <= 1)
+);
+CREATE INDEX IF NOT EXISTS scores_song_user_idx ON scores (song_id, user_id, score DESC);
+
 COMMIT;

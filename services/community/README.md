@@ -108,6 +108,8 @@ All request and response bodies are JSON with `snake_case` keys. Errors are
 | `DELETE` | `/comments/:id`        | author | → `204`                                                         |
 | `POST`   | `/items/:id/share`     | –      | `{ code, url }` — creates or returns the item's 6-char code     |
 | `GET`    | `/s/:code`             | –      | `302` → `FRONTEND_ORIGIN/<kind>/<item_id>`                      |
+| `GET`    | `/scores?song=&limit=` | no     | Stage board for a song: each player's best set, highest score first (limit 1-100, default 10) |
+| `POST`   | `/scores`              | bearer | Post a finished Stage set `{ song_id, score, accuracy, run, rating, variations }`; rehearsal sets are refused |
 
 ### `GET /items` query parameters
 

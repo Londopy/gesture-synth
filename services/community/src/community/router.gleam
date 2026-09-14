@@ -5,6 +5,7 @@ import community/comments
 import community/config.{type Config}
 import community/items
 import community/likes
+import community/scores
 import community/share
 import community/web.{type Context}
 import gleam/http.{Delete, Get, Options, Patch, Post}
@@ -48,12 +49,18 @@ fn route(request: Request, ctx: Context) -> Response {
     ["items", id, "share"], Post -> share.create(ctx, request, id)
     ["comments", id], Delete -> comments.delete(ctx, request, id)
     ["s", code], Get -> share.redirect(ctx, code)
+    ["scores"], Get -> scores.list(ctx, request)
+    ["scores"], Post -> scores.create(ctx, request)
 
     // Known paths with the wrong method -> 405 with Allow header.
     [], _ | ["health"], _ | ["me"], _ | ["items", _], _ | ["s", _], _ ->
       method_not_allowed(allowed_for(segments))
-    ["auth", _], _ | ["items"], _ | ["items", _, _], _ | ["comments", _], _ ->
-      method_not_allowed(allowed_for(segments))
+    ["auth", _], _
+    | ["items"], _
+    | ["items", _, _], _
+    | ["comments", _], _
+    | ["scores"], _
+    -> method_not_allowed(allowed_for(segments))
 
     _, _ -> web.error_response(web.NotFound("route not found"))
   }
@@ -64,6 +71,7 @@ fn allowed_for(segments: List(String)) -> List(http.Method) {
     [] | ["health"] | ["me"] | ["s", _] -> [Get]
     ["auth", _] -> [Post]
     ["items"] -> [Get, Post]
+    ["scores"] -> [Get, Post]
     ["items", _] -> [Get, Patch, Delete]
     ["items", _, "like"] -> [Post, Delete]
     ["items", _, "comments"] -> [Get, Post]

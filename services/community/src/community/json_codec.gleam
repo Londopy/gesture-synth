@@ -1,6 +1,8 @@
 //// JSON encoding of domain types and decoding of request bodies.
 
-import community/store.{type Comment, type Item, type Page, type User}
+import community/store.{
+  type Comment, type Item, type Page, type Score, type User,
+}
 import gleam/dynamic.{type Dynamic}
 import gleam/dynamic/decode.{type Decoder}
 import gleam/json.{type Json}
@@ -213,6 +215,56 @@ pub fn patch_item_decoder() -> Decoder(PatchItemBody) {
 
 pub type CommentBody {
   CommentBody(body: String)
+}
+
+pub type ScoreBody {
+  ScoreBody(
+    song_id: String,
+    score: Int,
+    accuracy: Float,
+    run: Int,
+    rating: String,
+    variations: List(String),
+  )
+}
+
+pub fn score_decoder() -> Decoder(ScoreBody) {
+  use song_id <- decode.field("song_id", decode.string)
+  use score <- decode.field("score", decode.int)
+  use accuracy <- decode.field("accuracy", decode.float)
+  use run <- decode.field("run", decode.int)
+  use rating <- decode.field("rating", decode.string)
+  use variations <- decode.optional_field(
+    "variations",
+    [],
+    decode.list(decode.string),
+  )
+  decode.success(ScoreBody(
+    song_id:,
+    score:,
+    accuracy:,
+    run:,
+    rating:,
+    variations:,
+  ))
+}
+
+pub fn score(score: Score, author author_user: Option(User)) -> Json {
+  let fields = [
+    #("id", json.string(score.id)),
+    #("user_id", json.string(score.user_id)),
+    #("song_id", json.string(score.song_id)),
+    #("score", json.int(score.score)),
+    #("accuracy", json.float(score.accuracy)),
+    #("run", json.int(score.run)),
+    #("rating", json.string(score.rating)),
+    #("variations", json.array(score.variations, json.string)),
+    #("created_at", timestamp(score.created_at)),
+  ]
+  case author_user {
+    Some(user) -> json.object([#("author", author(user)), ..fields])
+    None -> json.object(fields)
+  }
 }
 
 pub fn comment_decoder() -> Decoder(CommentBody) {

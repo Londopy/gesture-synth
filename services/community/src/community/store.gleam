@@ -59,6 +59,22 @@ pub type ShortLink {
   ShortLink(code: String, item_id: String)
 }
 
+/// One finished Stage set posted to the community board. `song_id` is a
+/// built-in song id or a community item id; the service does not check which.
+pub type Score {
+  Score(
+    id: String,
+    user_id: String,
+    song_id: String,
+    score: Int,
+    accuracy: Float,
+    run: Int,
+    rating: String,
+    variations: List(String),
+    created_at: Timestamp,
+  )
+}
+
 pub type Sort {
   Newest
   Top
@@ -130,6 +146,10 @@ pub type Store {
     get_or_create_short_link: fn(String, String) ->
       Result(ShortLink, StoreError),
     get_short_link: fn(String) -> Result(ShortLink, StoreError),
+    // Stage boards: insert one set; list the best set per user for a song,
+    // highest score first, at most `limit` rows.
+    insert_score: fn(Score) -> Result(Score, StoreError),
+    list_scores: fn(String, Int) -> Result(List(Score), StoreError),
   )
 }
 

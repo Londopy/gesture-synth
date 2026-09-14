@@ -850,3 +850,123 @@ pub fn share_redirect_uses_frontend_origin_test() {
   assert header(get(ctx, "/s/" <> code), "location")
     == Ok("https://gesture-synth.app/loop/" <> id)
 }
+
+// ---------------------------------------------------------------------------
+// Stage boards
+// ---------------------------------------------------------------------------
+
+fn score_body(
+  song: String,
+  score: Int,
+  rating: String,
+  variations: List(String),
+) -> Json {
+  json.object([
+    #("song_id", json.string(song)),
+    #("score", json.int(score)),
+    #("accuracy", json.float(0.9)),
+    #("run", json.int(12)),
+    #("rating", json.string(rating)),
+    #("variations", json.array(variations, json.string)),
+  ])
+}
+
+pub fn scores_require_auth_test() {
+  let ctx = new_ctx()
+  let response =
+    post(ctx, "/scores", score_body("four-chords", 1000, "tight", []), None)
+  assert response.status == 401
+}
+
+pub fn scores_validation_test() {
+  let ctx = new_ctx()
+  let #(token, _) = register(ctx, "scorer")
+  let bad_rating =
+    post(
+      ctx,
+      "/scores",
+      score_body("four-chords", 1000, "legendary", []),
+      Some(token),
+    )
+  assert bad_rating.status == 400
+  assert string.contains(error_message(bad_rating), "rating")
+  let bad_variation =
+    post(
+      ctx,
+      "/scores",
+      score_body("four-chords", 1000, "tight", ["turbo"]),
+      Some(token),
+    )
+  assert bad_variation.status == 400
+  let rehearsal =
+    post(
+      ctx,
+      "/scores",
+      score_body("four-chords", 1000, "tight", ["rehearsal"]),
+      Some(token),
+    )
+  assert rehearsal.status == 400
+  assert string.contains(error_message(rehearsal), "rehearsal")
+  let missing_song = get_auth(ctx, "/scores", token)
+  assert missing_song.status == 400
+  let huge =
+    post(
+      ctx,
+      "/scores",
+      score_body("four-chords", 999_999_999, "tight", []),
+      Some(token),
+    )
+  assert huge.status == 400
+}
+
+pub fn scores_board_is_best_per_player_test() {
+  let ctx = new_ctx()
+  let #(a, a_id) = register(ctx, "alpha")
+  let #(b, b_id) = register(ctx, "bravo")
+  assert post(
+      ctx,
+      "/scores",
+      score_body("four-chords", 900, "steady", []),
+      Some(a),
+    ).status
+    == 201
+  assert post(
+      ctx,
+      "/scores",
+      score_body("four-chords", 1500, "pocket", ["strict"]),
+      Some(a),
+    ).status
+    == 201
+  assert post(
+      ctx,
+      "/scores",
+      score_body("four-chords", 1200, "tight", []),
+      Some(b),
+    ).status
+    == 201
+  // another song must not leak in
+  assert post(
+      ctx,
+      "/scores",
+      score_body("brass-tacks", 5000, "flawless", []),
+      Some(b),
+    ).status
+    == 201
+
+  let response = get(ctx, "/scores?song=four-chords&limit=10")
+  assert response.status == 200
+  let scores = list_at(body(response), ["scores"])
+  assert list.length(scores) == 2
+  let assert [first, second] = scores
+  assert str(first, ["user_id"]) == a_id
+  assert int_at(first, ["score"]) == 1500
+  assert str(first, ["author", "handle"]) == "alpha"
+  assert str(second, ["user_id"]) == b_id
+  assert int_at(second, ["score"]) == 1200
+
+  let limited = get(ctx, "/scores?song=four-chords&limit=1")
+  assert list.length(list_at(body(limited), ["scores"])) == 1
+
+  let wrong_method = delete(ctx, "/scores", Some(a))
+  assert wrong_method.status == 405
+}

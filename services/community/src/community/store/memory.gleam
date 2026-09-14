@@ -5,7 +5,7 @@
 //// `DATABASE_URL` is unset. Data is lost when the process exits.
 
 import community/store.{
-  type Comment, type Item, type ItemQuery, type Page, type Session,
+  type Comment, type Item, type ItemQuery, type Page, type Score, type Session,
   type ShortLink, type Store, type StoreError, type User, Conflict, NotFound,
   Page, ShortLink, Store,
 }
@@ -40,6 +40,7 @@ type State {
     comments: Dict(String, Comment),
     links: Dict(String, ShortLink),
     item_links: Dict(String, String),
+    scores: List(Score),
   )
 }
 
@@ -64,6 +65,8 @@ pub opaque type Message {
   DeleteComment(String, Subject(Result(Nil, StoreError)))
   GetOrCreateShortLink(String, String, Subject(Result(ShortLink, StoreError)))
   GetShortLink(String, Subject(Result(ShortLink, StoreError)))
+  InsertScore(Score, Subject(Result(Score, StoreError)))
+  ListScores(String, Int, Subject(Result(List(Score), StoreError)))
 }
 
 // ---------------------------------------------------------------------------
@@ -108,6 +111,8 @@ fn store_for(s: Subject(Message)) -> Store {
       call(s, GetOrCreateShortLink(item_id, code, _))
     },
     get_short_link: fn(code) { call(s, GetShortLink(code, _)) },
+    insert_score: fn(score) { call(s, InsertScore(score, _)) },
+    list_scores: fn(song_id, limit) { call(s, ListScores(song_id, limit, _)) },
   )
 }
 
@@ -132,6 +137,7 @@ fn empty_state() -> State {
     comments: dict.new(),
     links: dict.new(),
     item_links: dict.new(),
+    scores: [],
   )
 }
 
@@ -459,7 +465,34 @@ fn handle_message(
       process.send(reply, lookup(state.links, code))
       actor.continue(state)
     }
+    InsertScore(score, reply) -> {
+      process.send(reply, Ok(score))
+      actor.continue(State(..state, scores: [score, ..state.scores]))
+    }
+    ListScores(song_id, limit, reply) -> {
+      process.send(reply, Ok(best_scores(state.scores, song_id, limit)))
+      actor.continue(state)
+    }
   }
+}
+
+/// Best set per user for a song, highest score first.
+fn best_scores(
+  scores: List(Score),
+  song_id: String,
+  limit: Int,
+) -> List(Score) {
+  scores
+  |> list.filter(fn(s) { s.song_id == song_id })
+  |> list.fold(dict.new(), fn(best: Dict(String, Score), s: Score) {
+    case dict.get(best, s.user_id) {
+      Ok(prev) if prev.score >= s.score -> best
+      _ -> dict.insert(best, s.user_id, s)
+    }
+  })
+  |> dict.values
+  |> list.sort(fn(a, b) { int.compare(b.score, a.score) })
+  |> list.take(limit)
 }
 
 // ---------------------------------------------------------------------------

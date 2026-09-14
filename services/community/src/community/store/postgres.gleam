@@ -6,9 +6,9 @@
 //// compiles without a database; it is only exercised at runtime.
 
 import community/store.{
-  type Comment, type Item, type ItemQuery, type Page, type Session,
+  type Comment, type Item, type ItemQuery, type Page, type Score, type Session,
   type ShortLink, type Store, type StoreError, type User, Comment, Conflict,
-  Item, NotFound, Page, Session, ShortLink, Store, Unavailable, User,
+  Item, NotFound, Page, Score, Session, ShortLink, Store, Unavailable, User,
 }
 import gleam/dynamic/decode
 import gleam/erlang/process
@@ -196,6 +196,8 @@ fn store_for(db: pog.Connection) -> Store {
       get_or_create_short_link(db, item_id, code)
     },
     get_short_link: get_short_link(db, _),
+    insert_score: insert_score(db, _),
+    list_scores: fn(song_id, limit) { list_scores(db, song_id, limit) },
   )
 }
 
@@ -313,6 +315,31 @@ fn comment_decoder() -> decode.Decoder(Comment) {
   use body <- decode.field(3, decode.string)
   use created_at <- decode.field(4, pog.timestamp_decoder())
   decode.success(Comment(id:, item_id:, author_id:, body:, created_at:))
+}
+
+const score_columns = "id, user_id, song_id, score, accuracy, run, rating, variations, created_at"
+
+fn score_decoder() -> decode.Decoder(Score) {
+  use id <- decode.field(0, decode.string)
+  use user_id <- decode.field(1, decode.string)
+  use song_id <- decode.field(2, decode.string)
+  use score <- decode.field(3, decode.int)
+  use accuracy <- decode.field(4, decode.float)
+  use run <- decode.field(5, decode.int)
+  use rating <- decode.field(6, decode.string)
+  use variations <- decode.field(7, decode.list(decode.string))
+  use created_at <- decode.field(8, pog.timestamp_decoder())
+  decode.success(Score(
+    id:,
+    user_id:,
+    song_id:,
+    score:,
+    accuracy:,
+    run:,
+    rating:,
+    variations:,
+    created_at:,
+  ))
 }
 
 fn short_link_decoder() -> decode.Decoder(ShortLink) {
@@ -771,4 +798,50 @@ fn get_short_link(
   |> pog.returning(short_link_decoder())
   |> run(db)
   |> one
+}
+
+// ---------------------------------------------------------------------------
+// Stage boards
+// ---------------------------------------------------------------------------
+
+fn insert_score(db: pog.Connection, score: Score) -> Result(Score, StoreError) {
+  pog.query(
+    "INSERT INTO scores (id, user_id, song_id, score, accuracy, run, rating, variations, created_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+     RETURNING "
+    <> score_columns,
+  )
+  |> pog.parameter(pog.text(score.id))
+  |> pog.parameter(pog.text(score.user_id))
+  |> pog.parameter(pog.text(score.song_id))
+  |> pog.parameter(pog.int(score.score))
+  |> pog.parameter(pog.float(score.accuracy))
+  |> pog.parameter(pog.int(score.run))
+  |> pog.parameter(pog.text(score.rating))
+  |> pog.parameter(text_array(score.variations))
+  |> pog.parameter(pog.timestamp(score.created_at))
+  |> pog.returning(score_decoder())
+  |> run(db)
+  |> one
+}
+
+/// Best set per user for the song, highest first. DISTINCT ON keeps one row
+/// per user (their top score), then the outer ORDER BY ranks those.
+fn list_scores(
+  db: pog.Connection,
+  song_id: String,
+  limit: Int,
+) -> Result(List(Score), StoreError) {
+  pog.query("SELECT " <> score_columns <> " FROM (
+       SELECT DISTINCT ON (user_id) " <> score_columns <> "
+       FROM scores WHERE song_id = $1
+       ORDER BY user_id, score DESC, created_at ASC
+     ) best
+     ORDER BY score DESC, created_at ASC
+     LIMIT $2")
+  |> pog.parameter(pog.text(song_id))
+  |> pog.parameter(pog.int(limit))
+  |> pog.returning(score_decoder())
+  |> run(db)
+  |> rows
 }
