@@ -147,7 +147,7 @@ Clear camera view for framing yourself, then record the scene or the raw camera 
 <td valign="top">
 
 ### 🏅 Collect
-Fifty medals from bronze to platinum for playing, looping, learning, exploring and watching, plus ten secret gestures. Unlocks pop up like osu! medals.
+Fifty-five medals from bronze to platinum for playing, looping, learning, exploring, watching and rating sets, plus ten secret gestures.
 
 </td>
 <td valign="top">
@@ -238,6 +238,39 @@ under a dark tint) and **clear camera** (the plain picture, no effects).
 
 </details>
 
+## Stage
+
+<p align="center">
+  <img src="docs/shots/stage-menu.png" alt="Stage main menu: seven glass keys labelled I to VII over the scene, each an entry" width="100%">
+</p>
+
+The desktop app opens in **Stage**, a game shell for the same instrument. The
+website keeps the workstation layout (**Studio**); either can switch in
+Settings › Shell.
+
+- **Menu**: seven keys, I to VII. Resting on one sounds that chord degree in
+  your current key. The instrument plays a slow loop underneath when track 4
+  is free.
+- **Sets**: song select on the circle of fifths. Songs sit at their key on the
+  scene's own ring; the selected one previews through the engine. Difficulty
+  is one to five hands.
+- **Play a set**: one pass through a song for a **Take rating**. Every chord
+  change is judged with its direction, **Locked** (within 60 ms), **On it**,
+  **Early** or **Late**, or **Dropped**. A **Run** builds on consecutive hits
+  and multiplies the score; **Groove** fills on good hits and drains on drops,
+  and an empty Groove ends the take unless Rehearsal is on.
+- **Variations**: Rehearsal, Half-time, Double-time, Blind, Strict, Mirror,
+  each with its own score multiplier.
+- **Results**: the rating, from **Rough** to **Flawless**, the numbers, a timing
+  constellation that plots every hit early or late, your local board and the
+  community board.
+- **Profile**: a rank ladder from Busker to Maestro, best takes, recent sets.
+- Game audio is synthesised in key, no sample files. `F11` toggles fullscreen.
+
+| Sets | Results |
+| --- | --- |
+| ![Sets wheel](docs/shots/stage-sets.png) | ![Results](docs/shots/stage-results.png) |
+
 ## Secrets
 
 <p align="center">
@@ -255,7 +288,7 @@ it. The screenshot above gives away the first one.
   <img src="docs/shots/medals.png" alt="Medals page: a grid of tiered medals with progress bars, a detail panel for Scale Walker" width="100%">
 </p>
 
-Fifty medals across Playing, Looping, Learning, Exploring, Dedication
+Fifty-five medals across Playing, Looping, Learning, Exploring, Dedication
 and Hush-Hush, in bronze, silver, gold and platinum. Counters show progress;
 the hush-hush ones show nothing until you have them. Unlocks pop up
 osu!-style with a chime. Everything is tracked on your device only.
