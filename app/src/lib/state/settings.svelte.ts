@@ -2,7 +2,7 @@
 // platforms; the desktop build additionally mirrors them into the data folder.
 
 import type { ParserConfig } from '../tracking/parser';
-import { isPhone } from '../platform';
+import { isPhone, isTauri } from '../platform';
 
 export interface Shortcuts {
   [action: string]: string;
@@ -88,6 +88,14 @@ export interface Settings {
   demoMode: 'cycle' | 'loop' | 'once';
   /** draw the next chord's hand outline while a demo plays */
   demoShowNext: boolean;
+  /** studio = the workstation layout; stage = the game shell (desktop default) */
+  shell: 'studio' | 'stage';
+  /** Stage game audio: UI blips, fanfares, menu music. Master switch + level. */
+  gameAudio: boolean;
+  gameVolume: number;
+  menuMusic: boolean;
+  /** how many times the Stage intro has played; it stops auto-playing after three */
+  introSeen: number;
 }
 
 const KEY = 'gsyn.settings.v1';
@@ -162,6 +170,11 @@ export function defaultSettings(): Settings {
     eggsEnabled: true,
     demoMode: 'cycle',
     demoShowNext: true,
+    shell: isTauri ? 'stage' : 'studio',
+    gameAudio: true,
+    gameVolume: 0.6,
+    menuMusic: true,
+    introSeen: 0,
   };
 }
 
