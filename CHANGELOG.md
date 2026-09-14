@@ -4,6 +4,8 @@ All notable changes to Gesture Synth are documented here. The format follows [Ke
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-09-14
+
 ### Added
 
 - Stage, a game shell for the desktop app (the website keeps the Studio layout; Settings › Shell switches either way): an intro, a main menu of seven keys that sound their scale degree in the current key with generated menu music, song select on the circle of fifths with engine previews and a one-to-five-hands difficulty, playing a set for a Take rating (Locked / On it / Early / Late / Dropped judgments with direction, Run multiplier, Groove meter, six Variations), a results screen with a timing constellation and local and community boards, a profile with a rank ladder from Busker to Maestro, five new medals, synthesised in-key game audio with a master switch, `F11` fullscreen, and the desktop window starting maximised.
@@ -89,6 +91,7 @@ All notable changes to Gesture Synth are documented here. The format follows [Ke
 - The AudioWorklet receives raw `.wasm` bytes and compiles them itself. Chromium silently drops a `postMessage` to an AudioWorklet port when the payload contains a `WebAssembly.Module`.
 - The synthetic hand generator used by tutorials and tests produces a relaxed thumb inside the octave-neutral band instead of reading as "thumb in".
 
-[Unreleased]: https://github.com/Londopy/gesture-synth/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/Londopy/gesture-synth/compare/v0.3.0...HEAD
 [0.1.0]: https://github.com/Londopy/gesture-synth/releases/tag/v0.1.0
 [0.2.0]: https://github.com/Londopy/gesture-synth/compare/v0.1.0...v0.2.0
+[0.3.0]: https://github.com/Londopy/gesture-synth/compare/v0.2.0...v0.3.0
