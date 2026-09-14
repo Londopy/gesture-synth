@@ -10,7 +10,9 @@
 //! only used for UI-rate calls (sessions, grids, settings).
 
 use gsyn_core::engine::{wav_from_f32, Engine, EngineCommand};
-use gsyn_core::gesture::{synth_hand, GestureParser, HandFrame, Handedness, ParserConfig};
+use gsyn_core::gesture::{
+    synth_hand, synth_hand_ex, GestureParser, HandFrame, Handedness, ParserConfig, ThumbPose,
+};
 use gsyn_core::instruments::Instrument;
 use gsyn_core::midi::tracks_to_smf;
 use gsyn_core::music::{self, Mode, PitchClass, Quality, Shape, VoicingSettings};
@@ -636,6 +638,51 @@ pub fn synth_hand_landmarks(
         } else {
             Handedness::Left
         },
+    );
+    h.landmarks.iter().flat_map(|p| p.iter().copied()).collect()
+}
+
+/// `synth_hand_landmarks` with an explicit thumb pose and pinch, for the demo
+/// performer. `thumb`: -1 folded in (octave -1), 0 tucked down (octave 0),
+/// 1 out (octave +1), 2 relaxed (keeps the previous octave; used while pinching).
+#[wasm_bindgen]
+#[allow(clippy::too_many_arguments)]
+pub fn synth_hand_landmarks_ex(
+    cx: f32,
+    cy: f32,
+    palm: f32,
+    fingers: u8,
+    tilt_deg: f32,
+    right: bool,
+    thumb: i8,
+    pinch: bool,
+) -> Vec<f32> {
+    let f = [
+        fingers & 1 != 0,
+        fingers & 2 != 0,
+        fingers & 4 != 0,
+        fingers & 8 != 0,
+        fingers & 16 != 0,
+    ];
+    let pose = match thumb {
+        -1 => ThumbPose::In,
+        0 => ThumbPose::Down,
+        1 => ThumbPose::Out,
+        _ => ThumbPose::Relaxed,
+    };
+    let h = synth_hand_ex(
+        cx,
+        cy,
+        palm,
+        f,
+        tilt_deg,
+        if right {
+            Handedness::Right
+        } else {
+            Handedness::Left
+        },
+        pose,
+        pinch,
     );
     h.landmarks.iter().flat_map(|p| p.iter().copied()).collect()
 }

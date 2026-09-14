@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CATEGORIES, MEDALS, TIER_INFO, emptyStats, medalById } from './defs';
+import { DEMO_IDS } from '../demo/ids';
 
 describe('medal definitions', () => {
   it('have unique ids, valid categories and tiers, and copy', () => {
@@ -31,6 +32,8 @@ describe('medal definitions', () => {
       expect(a).toBeLessThanOrEqual(b);
       expect(a >= b).toBe(m.check(s));
     }
+    expect(medalById('spectator')!.check(s)).toBe(false);
+    expect(medalById('front_row')!.check(s)).toBe(false);
     expect(medalById('thousand_hands')!.check(s)).toBe(true);
     expect(medalById('chord_lord')!.check(s)).toBe(false);
     expect(medalById('extension_cord')!.check(s)).toBe(true);
@@ -52,6 +55,21 @@ describe('medal definitions', () => {
     s.secretsFound = 10;
     expect(medalById('secret_keeper')!.check(s)).toBe(true);
     expect(medalById('completionist')!.check(s)).toBe(false); // resolved by the store
+  });
+
+  it('demo medals count distinct built-in demos', () => {
+    const s = emptyStats();
+    expect(medalById('front_row')!.progress!(s)[1]).toBe(DEMO_IDS.length);
+    expect(medalById('spectator')!.check(s)).toBe(false);
+    s.demosWatched = ['my-own-song'];
+    expect(medalById('spectator')!.check(s)).toBe(true);
+    expect(medalById('front_row')!.progress!(s)[0]).toBe(0);
+    s.demosWatched = [...DEMO_IDS.slice(0, 3), 'my-own-song'];
+    expect(medalById('front_row')!.check(s)).toBe(false);
+    expect(medalById('front_row')!.progress!(s)).toEqual([3, DEMO_IDS.length]);
+    s.demosWatched = [...DEMO_IDS, DEMO_IDS[0]];
+    expect(medalById('front_row')!.check(s)).toBe(true);
+    for (const m of MEDALS.filter((x) => ['spectator', 'front_row'].includes(x.id))) expect(m.category).toBe('explore');
   });
 
   it('has a sensible spread of tiers', () => {

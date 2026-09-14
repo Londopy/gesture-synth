@@ -3,11 +3,11 @@
 //! triple buffer; UI commands through an SPSC ring; position/track state goes
 //! back to the webview as a ~60 Hz Tauri event; MIDI bytes go to midir.
 
+use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use gsyn_core::engine::{Engine, EngineCommand, EngineSettings};
 use gsyn_core::rt::{SpscRing, TripleBuffer};
 use gsyn_core::state::{Event, MusicalState, EVENT_FLOATS, STATE_FLOATS};
 use gsyn_core::MAX_BLOCK;
-use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use parking_lot::Mutex;
 use serde::Serialize;
 use std::sync::atomic::Ordering;
@@ -25,14 +25,23 @@ pub struct LivePacket {
 
 impl Default for LivePacket {
     fn default() -> Self {
-        Self { state: MusicalState::default(), events: [Event::ChordOff; 16], n_events: 0, seq: 0 }
+        Self {
+            state: MusicalState::default(),
+            events: [Event::ChordOff; 16],
+            n_events: 0,
+            seq: 0,
+        }
     }
 }
 
 /// Requests that need the engine but are not `Copy` (session JSON etc.). The
 /// audio thread drains this mutex only when it can take it without blocking.
 pub enum Request {
-    Call { method: String, args: Vec<serde_json::Value>, reply: std::sync::mpsc::Sender<Result<serde_json::Value, String>> },
+    Call {
+        method: String,
+        args: Vec<serde_json::Value>,
+        reply: std::sync::mpsc::Sender<Result<serde_json::Value, String>>,
+    },
     SetLive(LivePacket),
 }
 
@@ -66,11 +75,21 @@ pub struct PositionPayload {
 pub fn list_output_devices() -> Vec<(String, String)> {
     let host = cpal::default_host();
     host.output_devices()
-        .map(|it| it.filter_map(|d| d.name().ok()).map(|n| (n.clone(), n)).collect())
+        .map(|it| {
+            it.filter_map(|d| d.name().ok())
+                .map(|n| (n.clone(), n))
+                .collect()
+        })
         .unwrap_or_default()
 }
 
-pub fn start(app: AppHandle, device_id: Option<String>, buffer_size: u32, settings: Option<EngineSettings>, midi: Arc<Mutex<Option<midir::MidiOutputConnection>>>) -> Result<AudioBackend, String> {
+pub fn start(
+    app: AppHandle,
+    device_id: Option<String>,
+    buffer_size: u32,
+    settings: Option<EngineSettings>,
+    midi: Arc<Mutex<Option<midir::MidiOutputConnection>>>,
+) -> Result<AudioBackend, String> {
     let host = cpal::default_host();
     let device = match device_id.as_deref().filter(|s| !s.is_empty()) {
         Some(name) => host
@@ -88,7 +107,11 @@ pub fn start(app: AppHandle, device_id: Option<String>, buffer_size: u32, settin
     cfg.channels = 2;
     cfg.buffer_size = cpal::BufferSize::Fixed(buffer_size.clamp(32, 2048));
 
-    let shared = Arc::new(Shared { live: TripleBuffer::new(LivePacket::default()), cmds: SpscRing::new(), requests: Mutex::new(Vec::new()) });
+    let shared = Arc::new(Shared {
+        live: TripleBuffer::new(LivePacket::default()),
+        cmds: SpscRing::new(),
+        requests: Mutex::new(Vec::new()),
+    });
     let mut engine = Engine::new(sample_rate as f32);
     if let Some(s) = settings {
         engine.settings = s;
@@ -128,8 +151,14 @@ pub fn start(app: AppHandle, device_id: Option<String>, buffer_size: u32, settin
                 if let Some(mut reqs) = shared_cb.requests.try_lock() {
                     for req in reqs.drain(..) {
                         match req {
-                            Request::SetLive(p) => engine.set_live(p.state, &p.events[..p.n_events as usize]),
-                            Request::Call { method, args, reply } => {
+                            Request::SetLive(p) => {
+                                engine.set_live(p.state, &p.events[..p.n_events as usize])
+                            }
+                            Request::Call {
+                                method,
+                                args,
+                                reply,
+                            } => {
                                 let _ = reply.send(call(&mut engine, &method, &args));
                             }
                         }
@@ -205,7 +234,14 @@ pub fn start(app: AppHandle, device_id: Option<String>, buffer_size: u32, settin
                         ev_floats.extend_from_slice(&b);
                     }
                     // emit is cheap (channel send); allocation here is UI-rate, acceptable.
-                    let _ = app_cb.emit("gsyn://position", PositionPayload { pos: pos_buf.to_vec(), tracks: track_buf.to_vec(), events: ev_floats });
+                    let _ = app_cb.emit(
+                        "gsyn://position",
+                        PositionPayload {
+                            pos: pos_buf.to_vec(),
+                            tracks: track_buf.to_vec(),
+                            events: ev_floats,
+                        },
+                    );
                 }
             },
             err_fn,
@@ -214,12 +250,22 @@ pub fn start(app: AppHandle, device_id: Option<String>, buffer_size: u32, settin
         .map_err(|e| e.to_string())?;
     stream.play().map_err(|e| e.to_string())?;
     let latency_ms = (buffer_size as f32 / sample_rate as f32 * 1000.0).round() as u32 + 2;
-    Ok(AudioBackend { _stream: stream, shared, device_name, sample_rate, latency_ms, seq: std::sync::atomic::AtomicU32::new(1) })
+    Ok(AudioBackend {
+        _stream: stream,
+        shared,
+        device_name,
+        sample_rate,
+        latency_ms,
+        seq: std::sync::atomic::AtomicU32::new(1),
+    })
 }
 
 impl AudioBackend {
     pub fn set_live(&self, state: &[f32], events: &[f32]) {
-        let mut pkt = LivePacket { state: MusicalState::from_floats(state), ..Default::default() };
+        let mut pkt = LivePacket {
+            state: MusicalState::from_floats(state),
+            ..Default::default()
+        };
         for (i, chunk) in events.chunks_exact(EVENT_FLOATS).take(16).enumerate() {
             if let Some(e) = Event::from_floats(chunk) {
                 pkt.events[i] = e;
@@ -241,17 +287,28 @@ impl AudioBackend {
             eprintln!("[audio] command ring full, dropped {cmd:?}");
         }
     }
-
 }
 
 /// Mirror of the WasmEngine method surface used by the frontend `call()` API.
-fn call(engine: &mut Engine, method: &str, args: &[serde_json::Value]) -> Result<serde_json::Value, String> {
+fn call(
+    engine: &mut Engine,
+    method: &str,
+    args: &[serde_json::Value],
+) -> Result<serde_json::Value, String> {
     use gsyn_core::instruments::Instrument;
     use gsyn_core::music::{Quality, Shape, VoicingSettings};
     use gsyn_core::session::{SessionFile, SongFile};
     use serde_json::{json, Value};
-    let s = |i: usize| args.get(i).and_then(|v| v.as_str()).ok_or_else(|| format!("arg {i} must be a string"));
-    let n = |i: usize| args.get(i).and_then(|v| v.as_f64()).ok_or_else(|| format!("arg {i} must be a number"));
+    let s = |i: usize| {
+        args.get(i)
+            .and_then(|v| v.as_str())
+            .ok_or_else(|| format!("arg {i} must be a string"))
+    };
+    let n = |i: usize| {
+        args.get(i)
+            .and_then(|v| v.as_f64())
+            .ok_or_else(|| format!("arg {i} must be a number"))
+    };
     Ok(match method {
         "tracks_json" => {
             let v: Vec<Value> = engine
@@ -264,7 +321,16 @@ fn call(engine: &mut Engine, method: &str, args: &[serde_json::Value]) -> Result
         }
         "grid_json" => {
             let g = engine.looper.grid(&engine.transport);
-            let mutes: Vec<Vec<bool>> = engine.looper.tracks.iter().map(|t| (0..t.steps(&engine.transport)).map(|s| t.step_muted(s)).collect()).collect();
+            let mutes: Vec<Vec<bool>> = engine
+                .looper
+                .tracks
+                .iter()
+                .map(|t| {
+                    (0..t.steps(&engine.transport))
+                        .map(|s| t.step_muted(s))
+                        .collect()
+                })
+                .collect();
             Value::String(serde_json::to_string(&json!({ "cells": g, "mutes": mutes, "steps_per_bar": engine.transport.sig.steps_per_bar() })).unwrap_or_default())
         }
         "to_session_json" => Value::String(engine.to_session().to_json()),
@@ -295,11 +361,23 @@ fn call(engine: &mut Engine, method: &str, args: &[serde_json::Value]) -> Result
                 3 => Shape::DomOrDim7,
                 _ => Shape::Root,
             };
-            let mut st = MusicalState { key: engine.key, mode: engine.mode, degree: n(2)? as u8, quality, shape, octave: n(5).unwrap_or(0.0) as i8, ..Default::default() };
+            let mut st = MusicalState {
+                key: engine.key,
+                mode: engine.mode,
+                degree: n(2)? as u8,
+                quality,
+                shape,
+                octave: n(5).unwrap_or(0.0) as i8,
+                ..Default::default()
+            };
             st.derive_notes(VoicingSettings::default());
             let t = (n(0)? as usize).min(3);
             let transport = engine.transport;
-            engine.looper.tracks[t].replace_chord_at_step(n(1)? as usize, &transport, Event::chord_on_from(&st));
+            engine.looper.tracks[t].replace_chord_at_step(
+                n(1)? as usize,
+                &transport,
+                Event::chord_on_from(&st),
+            );
             engine.looper.mark_dirty(t);
             Value::Null
         }
@@ -308,10 +386,16 @@ fn call(engine: &mut Engine, method: &str, args: &[serde_json::Value]) -> Result
             let t = (n(1)? as usize).min(3);
             engine.command(EngineCommand::SetBpm { bpm: song.bpm });
             if let Some(sig) = gsyn_core::transport::TimeSig::parse(&song.time_sig) {
-                engine.command(EngineCommand::SetTimeSig { beats: sig.beats, unit: sig.unit });
+                engine.command(EngineCommand::SetTimeSig {
+                    beats: sig.beats,
+                    unit: sig.unit,
+                });
             }
             engine.command(EngineCommand::SetBars { bars: song.bars });
-            engine.command(EngineCommand::SetKey { key: song.key, mode: song.mode });
+            engine.command(EngineCommand::SetKey {
+                key: song.key,
+                mode: song.mode,
+            });
             let mut tr = song.to_track(t, VoicingSettings::default());
             tr.midi_ch = engine.looper.tracks[t].midi_ch;
             let inst = tr.instrument.clone();
@@ -321,11 +405,17 @@ fn call(engine: &mut Engine, method: &str, args: &[serde_json::Value]) -> Result
             Value::Null
         }
         "set_track_landmarks_json" => {
-            engine.looper.tracks[(n(0)? as usize).min(3)].landmarks15hz = serde_json::from_str(s(1)?).map_err(|e| e.to_string())?;
+            engine.looper.tracks[(n(0)? as usize).min(3)].landmarks15hz =
+                serde_json::from_str(s(1)?).map_err(|e| e.to_string())?;
             Value::Null
         }
-        "track_landmarks_json" => Value::String(serde_json::to_string(&engine.looper.tracks[(n(0)? as usize).min(3)].landmarks15hz).unwrap_or_default()),
-        "settings_json" => Value::String(serde_json::to_string(&engine.settings).unwrap_or_default()),
+        "track_landmarks_json" => Value::String(
+            serde_json::to_string(&engine.looper.tracks[(n(0)? as usize).min(3)].landmarks15hz)
+                .unwrap_or_default(),
+        ),
+        "settings_json" => {
+            Value::String(serde_json::to_string(&engine.settings).unwrap_or_default())
+        }
         "set_settings" => {
             engine.settings = serde_json::from_str(s(0)?).map_err(|e| e.to_string())?;
             engine.synth.metronome.volume = engine.settings.metronome_volume;

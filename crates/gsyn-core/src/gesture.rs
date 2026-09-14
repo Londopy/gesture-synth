@@ -920,9 +920,26 @@ impl GestureParser {
     }
 }
 
+/// Thumb pose of a synthetic right hand (spec 4.3 octave gesture). The parser
+/// keeps the previous octave while the thumb tip sits 0.55..0.85 palm from the
+/// middle MCP, and a relaxed synthetic thumb lands inside that band; a demo that
+/// needs octave 0 after +1 or -1 must therefore show a distinct tucked thumb.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum ThumbPose {
+    /// Resting beside the index finger: hysteresis band, keeps the previous octave.
+    Relaxed,
+    /// Tucked along the wrist: reads octave 0.
+    Down,
+    /// Folded across the palm to the middle MCP: reads octave -1.
+    In,
+    /// Stuck out sideways: reads octave +1.
+    Out,
+}
+
 /// Synthetic hand poses for tests and the tutorial/onboarding diagrams.
 /// Produces a plausible 21-landmark right hand in frame coordinates, palm facing
-/// the camera, wrist at (cx, cy). `fingers` = [thumb, index, middle, ring, pinky].
+/// the camera, wrist at (cx, cy). `fingers` = [thumb, index, middle, ring, pinky];
+/// the thumb entry selects `ThumbPose::Out` vs `ThumbPose::Relaxed`.
 pub fn synth_hand(
     cx: f32,
     cy: f32,
@@ -930,6 +947,29 @@ pub fn synth_hand(
     fingers: [bool; 5],
     tilt_deg: f32,
     handedness: Handedness,
+) -> HandFrame {
+    let thumb = if fingers[0] {
+        ThumbPose::Out
+    } else {
+        ThumbPose::Relaxed
+    };
+    synth_hand_ex(cx, cy, palm, fingers, tilt_deg, handedness, thumb, false)
+}
+
+/// `synth_hand` with an explicit thumb pose and an optional thumb-index pinch.
+/// `pinch` bends the index tip down onto the relaxed thumb tip, so the index no
+/// longer counts as extended (shape holds) while the thumb stays in the
+/// hysteresis band (octave holds); only meaningful with `ThumbPose::Relaxed`.
+#[allow(clippy::too_many_arguments)]
+pub fn synth_hand_ex(
+    cx: f32,
+    cy: f32,
+    palm: f32,
+    fingers: [bool; 5],
+    tilt_deg: f32,
+    handedness: Handedness,
+    thumb: ThumbPose,
+    pinch: bool,
 ) -> HandFrame {
     let mut p = [[0.0f32; 3]; 21];
     // side multiplier: thumb side. In a raw (non-mirrored) frame the user's right
@@ -939,16 +979,14 @@ pub fn synth_hand(
     } else {
         -1.0
     };
+    // pre-tilt palm units relative to the wrist; z stays in frame units
+    let at = |x: f32, y: f32, z: f32| -> Vec3 { [cx + side * x * palm, cy + y * palm, z] };
     p[0] = [cx, cy, 0.0];
     // MCP row (index..pinky), fanned from thumb side to pinky side, one palm up
     let mcp_x = [0.35, 0.12, -0.12, -0.35];
     let mcp_idx = [5usize, 9, 13, 17];
     for (k, &i) in mcp_idx.iter().enumerate() {
-        p[i] = [
-            cx + side * mcp_x[k] * palm,
-            cy - palm * (1.0 - 0.08 * k as f32),
-            0.0,
-        ];
+        p[i] = at(mcp_x[k], -(1.0 - 0.08 * k as f32), 0.0);
     }
     // finger segments
     let fing = [(5usize, 1usize), (9, 2), (13, 3), (17, 4)];
@@ -972,28 +1010,45 @@ pub fn synth_hand(
         }
     }
     // thumb
-    let cmc = [cx + side * 0.3 * palm, cy - 0.25 * palm, 0.0];
-    p[1] = cmc;
-    if fingers[0] {
-        // stuck out sideways
-        for j in 2..=4 {
-            p[j] = [
-                cmc[0] + side * 0.3 * palm * (j - 1) as f32,
-                cmc[1] - 0.12 * palm * (j - 1) as f32,
-                0.0,
-            ];
+    p[1] = at(0.3, -0.25, 0.0);
+    match thumb {
+        ThumbPose::Out => {
+            // stuck out sideways: > 1.1 palm from the pinky MCP
+            for j in 2..=4 {
+                p[j] = at(
+                    0.3 + 0.3 * (j - 1) as f32,
+                    -0.25 - 0.12 * (j - 1) as f32,
+                    0.0,
+                );
+            }
         }
-    } else {
-        // relaxed: resting beside the index finger, about 0.7 palm from the middle MCP
-        // (a real relaxed thumb; "thumb in" needs < 0.55 palm and is a deliberate fold)
-        for j in 2..=4 {
-            let t = (j - 1) as f32 / 3.0;
-            p[j] = [
-                cmc[0] + side * 0.22 * palm * t,
-                cmc[1] - 0.3 * palm * t,
-                0.01,
-            ];
+        ThumbPose::Relaxed => {
+            // resting beside the index finger, 0.55..0.65 palm from the middle MCP
+            // (the parser's keep-previous band; "thumb in" needs < 0.55)
+            for j in 2..=4 {
+                let t = (j - 1) as f32 / 3.0;
+                p[j] = at(0.3 + 0.22 * t, -0.25 - 0.3 * t, 0.01);
+            }
         }
+        ThumbPose::Down => {
+            // tucked along the wrist: > 0.85 palm from the middle MCP yet within
+            // 1.1 palm of the pinky MCP, so the parser reads octave 0
+            p[2] = at(0.26, -0.10, 0.0);
+            p[3] = at(0.16, 0.02, 0.01);
+            p[4] = at(0.06, 0.08, 0.02);
+        }
+        ThumbPose::In => {
+            // folded across the palm onto the middle MCP: < 0.55 palm -> octave -1
+            p[2] = at(0.30, -0.50, 0.01);
+            p[3] = at(0.22, -0.70, 0.02);
+            p[4] = at(0.12, -0.80, 0.03);
+        }
+    }
+    if pinch {
+        // index tip bent down onto the relaxed thumb tip (< 0.3 palm apart); the
+        // tip is now closer to the wrist than the PIP so the finger reads folded
+        p[7] = at(0.42, -1.00, 0.0);
+        p[8] = at(0.50, -0.70, 0.0);
     }
     // apply tilt: rotate about the vertical axis through the wrist, so x mixes into z
     let a = tilt_deg.to_radians();
@@ -1294,5 +1349,257 @@ mod tests {
             6000.0,
         );
         assert!(!p.state().latched);
+    }
+
+    // ---- synthetic performer geometry (demo mode) -------------------------------
+
+    fn right_ex(fingers: [bool; 5], tilt: f32, y: f32, thumb: ThumbPose, pinch: bool) -> HandFrame {
+        let mut h = synth_hand_ex(0.3, y, 0.12, fingers, tilt, Handedness::Right, thumb, pinch);
+        h.handedness = raw_label(Handedness::Right);
+        h
+    }
+
+    const ROOT: [bool; 5] = [false, true, false, false, false];
+    const L_I: [bool; 5] = [false, true, false, false, false];
+
+    #[test]
+    fn thumb_poses_out_relaxed_keeps_octave_down_returns_to_zero() {
+        let mut p = GestureParser::default();
+        let l = left(L_I, 20.0);
+        let mut t = run(
+            &mut p,
+            &[l, right_ex(ROOT, 0.0, 0.4, ThumbPose::Out, false)],
+            6,
+            0.0,
+        );
+        assert_eq!(p.state().octave, 1);
+        // a relaxed thumb sits in the 0.55..0.85 hysteresis band: octave must NOT return to 0
+        t = run(
+            &mut p,
+            &[l, right_ex(ROOT, 0.0, 0.4, ThumbPose::Relaxed, false)],
+            6,
+            t,
+        );
+        assert_eq!(
+            p.state().octave,
+            1,
+            "relaxed thumb keeps the previous octave"
+        );
+        // the tucked thumb is the deliberate way back to 0
+        t = run(
+            &mut p,
+            &[l, right_ex(ROOT, 0.0, 0.4, ThumbPose::Down, false)],
+            6,
+            t,
+        );
+        assert_eq!(p.state().octave, 0);
+        assert_eq!(p.state().shape, Shape::Root);
+        // Down reads 0 across the tilt range the demo uses
+        for tilt in [-35.0f32, -20.0, 0.0, 20.0, 40.0] {
+            t = run(
+                &mut p,
+                &[l, right_ex(ROOT, tilt, 0.4, ThumbPose::Out, false)],
+                6,
+                t,
+            );
+            assert_eq!(p.state().octave, 1, "tilt {tilt}");
+            t = run(
+                &mut p,
+                &[l, right_ex(ROOT, tilt, 0.4, ThumbPose::Down, false)],
+                6,
+                t,
+            );
+            assert_eq!(p.state().octave, 0, "tilt {tilt}");
+        }
+    }
+
+    #[test]
+    fn thumb_in_reads_minus_one_and_down_restores_zero() {
+        let mut p = GestureParser::default();
+        let l = left(L_I, 20.0);
+        let mut t = run(
+            &mut p,
+            &[l, right_ex(ROOT, 0.0, 0.4, ThumbPose::In, false)],
+            6,
+            0.0,
+        );
+        assert_eq!(p.state().octave, -1);
+        assert_eq!(
+            p.state().shape,
+            Shape::Root,
+            "folded thumb must not read as a pinch"
+        );
+        assert!(!p.right_info().pinch);
+        t = run(
+            &mut p,
+            &[l, right_ex(ROOT, 0.0, 0.4, ThumbPose::Down, false)],
+            6,
+            t,
+        );
+        assert_eq!(p.state().octave, 0);
+        for tilt in [-30.0f32, 40.0] {
+            t = run(
+                &mut p,
+                &[l, right_ex(ROOT, tilt, 0.4, ThumbPose::In, false)],
+                6,
+                t,
+            );
+            assert_eq!(p.state().octave, -1, "tilt {tilt}");
+            t = run(
+                &mut p,
+                &[l, right_ex(ROOT, tilt, 0.4, ThumbPose::Down, false)],
+                6,
+                t,
+            );
+            assert_eq!(p.state().octave, 0, "tilt {tilt}");
+        }
+    }
+
+    #[test]
+    fn pinch_on_root_toggles_arp_once_without_changing_shape_or_octave() {
+        for (oct_pose, oct) in [(ThumbPose::Down, 0i8), (ThumbPose::Out, 1)] {
+            for tilt in [0.0f32, 40.0] {
+                let mut p = GestureParser::default();
+                let l = left(L_I, 20.0);
+                let mut t = run(
+                    &mut p,
+                    &[l, right_ex(ROOT, tilt, 0.4, oct_pose, false)],
+                    8,
+                    0.0,
+                );
+                assert_eq!(p.state().octave, oct);
+                assert_eq!(p.state().shape, Shape::Root);
+                assert!(!p.state().arp);
+                // pinch: relaxed thumb + folded index for 7 frames at 33 ms
+                let pinch = right_ex(ROOT, tilt, 0.4, ThumbPose::Relaxed, true);
+                let mut toggles = 0;
+                for _ in 0..7 {
+                    t += 33.0;
+                    p.feed(&[l, pinch], t);
+                    toggles += p
+                        .events()
+                        .iter()
+                        .filter(|e| matches!(e, Event::ArpToggle { .. }))
+                        .count();
+                }
+                assert_eq!(toggles, 1, "oct {oct} tilt {tilt}");
+                assert!(p.state().arp);
+                assert_eq!(p.state().shape, Shape::Root, "oct {oct} tilt {tilt}");
+                assert_eq!(p.state().octave, oct, "oct {oct} tilt {tilt}");
+                assert_eq!(p.state().degree, 1);
+                // holding the pinch longer does not toggle again
+                for _ in 0..10 {
+                    t += 33.0;
+                    p.feed(&[l, pinch], t);
+                    assert!(p
+                        .events()
+                        .iter()
+                        .all(|e| !matches!(e, Event::ArpToggle { .. })));
+                }
+                assert!(p.state().arp);
+                // release, then a second pinch toggles it back off
+                t = run(
+                    &mut p,
+                    &[l, right_ex(ROOT, tilt, 0.4, oct_pose, false)],
+                    3,
+                    t,
+                );
+                assert_eq!(p.state().octave, oct);
+                let mut toggles = 0;
+                for _ in 0..7 {
+                    t += 33.0;
+                    p.feed(&[l, pinch], t);
+                    toggles += p
+                        .events()
+                        .iter()
+                        .filter(|e| matches!(e, Event::ArpToggle { .. }))
+                        .count();
+                }
+                assert_eq!(toggles, 1);
+                assert!(!p.state().arp);
+                assert_eq!(p.state().octave, oct);
+                assert_eq!(p.state().shape, Shape::Root);
+            }
+        }
+    }
+
+    #[test]
+    fn one_frame_z_drop_is_one_bass_hit_with_refractory() {
+        let mut p = GestureParser::default();
+        let l = left(L_I, 20.0);
+        let r = right_ex(ROOT, 0.0, 0.4, ThumbPose::Down, false);
+        let mut dropped = l;
+        for q in dropped.landmarks.iter_mut() {
+            q[2] -= 0.03;
+        }
+        let count_bass = |p: &GestureParser| {
+            p.events()
+                .iter()
+                .filter(|e| matches!(e, Event::BassHit { .. }))
+                .count()
+        };
+        // no chord yet: a flick must not emit
+        p.feed(&[l, r], 33.0);
+        p.feed(&[dropped, r], 66.0);
+        assert_eq!(count_bass(&p), 0, "no BassHit without a chord");
+        let mut t = run(&mut p, &[l, r], 8, 66.0);
+        assert_eq!(p.state().degree, 1);
+        t += 33.0;
+        p.feed(&[dropped, r], t);
+        assert_eq!(count_bass(&p), 1);
+        let t_first = t;
+        // easing back up over the next frames is a negative z velocity: nothing
+        for k in 1..=3 {
+            let mut back = l;
+            for q in back.landmarks.iter_mut() {
+                q[2] -= 0.03 - 0.01 * k as f32;
+            }
+            t += 33.0;
+            p.feed(&[back, r], t);
+            assert_eq!(count_bass(&p), 0);
+        }
+        // 200 ms after the first hit: inside the 300 ms refractory window
+        let t2 = t_first + 200.0;
+        p.feed(&[l, r], t2 - 33.0);
+        p.feed(&[dropped, r], t2);
+        assert_eq!(count_bass(&p), 0, "second drop 200 ms later is swallowed");
+        p.feed(&[l, r], t2 + 33.0);
+        // 400 ms after the first hit: allowed again
+        let t3 = t_first + 400.0;
+        p.feed(&[l, r], t3 - 33.0);
+        p.feed(&[dropped, r], t3);
+        assert_eq!(count_bass(&p), 1, "drop 400 ms later hits");
+    }
+
+    #[test]
+    fn relaxed_thumb_stays_in_hysteresis_band_and_down_stays_out() {
+        let dist = |h: &HandFrame, a: usize, b: usize| math::dist(h.landmarks[a], h.landmarks[b]);
+        let mut tilt = -30.0f32;
+        while tilt <= 45.0 {
+            let h = right_ex(ROOT, tilt, 0.4, ThumbPose::Relaxed, false);
+            let palm = dist(&h, lm::WRIST, lm::MIDDLE_MCP);
+            let ttm = dist(&h, lm::THUMB_TIP, lm::MIDDLE_MCP) / palm;
+            assert!(
+                ttm > 0.55 && ttm < 0.85,
+                "relaxed thumb_to_middle {ttm} at tilt {tilt}"
+            );
+            assert!(
+                dist(&h, lm::THUMB_TIP, lm::PINKY_MCP) <= 1.1 * palm,
+                "relaxed thumb reads extended at tilt {tilt}"
+            );
+            tilt += 5.0;
+        }
+        let mut tilt = -35.0f32;
+        while tilt <= 40.0 {
+            let h = right_ex(ROOT, tilt, 0.4, ThumbPose::Down, false);
+            let palm = dist(&h, lm::WRIST, lm::MIDDLE_MCP);
+            let ttm = dist(&h, lm::THUMB_TIP, lm::MIDDLE_MCP) / palm;
+            assert!(ttm > 0.85, "down thumb_to_middle {ttm} at tilt {tilt}");
+            assert!(
+                dist(&h, lm::THUMB_TIP, lm::PINKY_MCP) <= 1.1 * palm,
+                "down thumb reads extended at tilt {tilt}"
+            );
+            tilt += 5.0;
+        }
     }
 }

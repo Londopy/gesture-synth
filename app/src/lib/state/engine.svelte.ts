@@ -91,11 +91,22 @@ class Runtime {
   private summaryTimer = 0;
   private lm = [new Float32Array(63), new Float32Array(63)];
   private trackFloats = new Float32Array(STATE_FLOATS * 4);
+  private posTickListeners = new Set<() => void>();
+  /**
+   * When set, every camera frame goes through this first; returning true swallows
+   * it. The demo uses it to keep real hands out of the parser while it plays and
+   * to notice when the user wants to take over.
+   */
+  cameraGate: ((f: TrackingFrame) => boolean) | null = null;
 
   // ---- lifecycle --------------------------------------------------------------
 
-  /** First user click: start audio (autoplay policy), then camera. */
-  async start(): Promise<void> {
+  /**
+   * First user click: start audio (autoplay policy), then camera. With
+   * `camera: false` the camera is left alone (the demo and a blocked camera
+   * both need a ready runtime without one); startCamera() can follow later.
+   */
+  async start(opts: { camera?: boolean } = {}): Promise<void> {
     if (this.phase !== 'idle' && this.phase !== 'error') return;
     try {
       this.phase = 'audio';
@@ -104,13 +115,18 @@ class Runtime {
       this.parser = new ParserBridge(cfg);
       await this.startBackend();
       this.applySettingsToEngine();
-      this.phase = 'camera';
-      try {
-        await this.startCamera();
-      } catch (camErr: any) {
-        // No camera is not fatal: audio, keyboard, loops and every page still work.
-        this.error = camErr?.message ?? String(camErr);
-        this.cameraFailed = true;
+      if (opts.camera !== false) {
+        this.phase = 'camera';
+        try {
+          await this.startCamera();
+        } catch (camErr: any) {
+          // No camera is not fatal: audio, keyboard, loops and every page still work.
+          this.error = camErr?.message ?? String(camErr);
+          this.cameraFailed = true;
+        }
+      } else {
+        this.cameraFailed = false;
+        this.trackingStatus = 'idle';
       }
       this.phase = 'ready';
       this.refreshSummary();
@@ -195,7 +211,10 @@ class Runtime {
         this.trackingStatus = st;
         if (err) this.error = err;
       };
-      this.tracking.onFrame = (f) => this.onFrame(f);
+      this.tracking.onFrame = (f) => {
+        if (this.cameraGate?.(f)) return;
+        this.feedFrame(f);
+      };
       this.video = this.tracking.video;
     }
     await this.tracking.start(deviceId ?? (settings.s.cameraDeviceId || undefined));
@@ -212,7 +231,11 @@ class Runtime {
 
   // ---- per-frame path ---------------------------------------------------------
 
-  private onFrame(f: TrackingFrame) {
+  /** Kept for call sites that predate the public name. */
+  private onFrame = (f: TrackingFrame) => this.feedFrame(f);
+
+  /** Run one frame of hands through parser -> engine -> reactive state. Camera frames and the demo performer both land here. */
+  feedFrame(f: TrackingFrame): void {
     if (!this.parser || !this.backend) return;
     this.trackingFps = this.tracking?.fps ?? 0;
     this.inferenceMs = Math.round(this.tracking?.inferenceMs ?? 0);
@@ -301,7 +324,33 @@ class Runtime {
     }
     this.lastRecording = p.recording;
     if (p.recTrack != null) this.lastRecTrack = p.recTrack;
-    // track chord-on bursts (compare with previous)
+    for (const cb of this.posTickListeners) cb();
+  }
+
+  /**
+   * Called after every position message from the engine (~62.5 Hz on 48 kHz,
+   * also while stopped). Unlike timers this keeps running in hidden tabs, so
+   * it is the clock anything that must stay in step with the audio uses.
+   */
+  onPositionTick(cb: () => void): () => void {
+    this.posTickListeners.add(cb);
+    return () => this.posTickListeners.delete(cb);
+  }
+
+  /** Release the live chord and forget the hands (ChordOff, latch cleared, meshes fade). */
+  clearLiveHands(): void {
+    this.parser?.allOff();
+    this.syncLive();
+    this.leftLandmarks = null;
+    this.rightLandmarks = null;
+    this.left = emptyHand();
+    this.right = emptyHand();
+  }
+
+  /** Swap the parser configuration without touching the persisted setting (the demo's gesture scheme, restored when it ends). */
+  setParserConfigTransient(cfg: ParserConfig): void {
+    this.parser?.setConfig(cfg);
+    this.syncLive();
   }
 
   /** Called by the scene each frame to advance ghost playback. */
@@ -576,10 +625,22 @@ if (typeof window !== 'undefined') {
         const hands = [] as any[];
         if (leftMask >= 0) hands.push(mk(0.7, 0.5, leftMask, leftTilt, false));
         if (rightMask >= 0) hands.push(mk(0.3, rightY, rightMask, rightTilt, true));
-        (rt as any).onFrame({ hands, tMs: performance.now(), inferenceMs: 0 });
+        rt.feedFrame({ hands, tMs: performance.now(), inferenceMs: 0 });
         await new Promise((r) => setTimeout(r, 33));
       }
       return { state: $state.snapshot(rt.live), chord: rt.chordName };
+    },
+    settings,
+    /** the achievements store (lazy: it imports this module) */
+    achievements: () => import('../achievements/store.svelte').then((m) => m.achievements),
+    /** the demo store (lazy: it pulls in the songs and the choreography) */
+    demo: () => import('../demo/demo.svelte').then((m) => m.demo),
+    /** the pure demo modules (songs + choreography) for checks that compare the performance against the score */
+    demoLib: () => Promise.all([import('../demo/songs'), import('../demo/choreo')]).then(([a, b]) => ({ ...a, ...b })),
+    /** a frame as if it came from the camera: goes through the demo's camera gate first */
+    fakeCamera(f: TrackingFrame) {
+      if (rt.cameraGate?.(f)) return;
+      rt.feedFrame(f);
     },
   };
 }

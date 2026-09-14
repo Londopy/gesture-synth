@@ -152,6 +152,21 @@ await page.waitForSelector('[aria-label="Record video"]');
 await ticks(5);
 await shot('recorder');
 
+// 5b) demo mode: Brass Tacks at bar 4 (thumb out, '+1 oct' pill, DEMO badge), stepped by hand because rAF is paused headless
+await key('Escape');
+await page.evaluate(async () => {
+  const d = await window.__gsyn.demo();
+  await d.start('brass-tacks', { mode: 'loop' });
+});
+await page.waitForFunction(async () => {
+  const d = await window.__gsyn.demo();
+  return !d.active || (d.phase === 'playing' && window.__gsyn.rt.position.bar === 4);
+}, { timeout: 60000, polling: 100 });
+await ticks(3);
+await shot('demo');
+await page.evaluate(async () => (await window.__gsyn.demo()).stop('button'));
+await new Promise((r) => setTimeout(r, 400));
+
 // 6) medals: play the seven degrees and the four shapes, catch the unlock toast, then the page
 await key('Escape');
 await page.evaluate(() => { window.__gsyn.rt.stop(); window.__gsyn.rt.dirty = false; localStorage.removeItem('gsyn.achievements.v1'); });

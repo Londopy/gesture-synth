@@ -41,7 +41,11 @@ struct DeviceInfo {
 }
 
 fn data_dir(app: &AppHandle) -> Result<PathBuf, String> {
-    let dir = app.path().app_data_dir().map_err(|e| e.to_string())?.join("files");
+    let dir = app
+        .path()
+        .app_data_dir()
+        .map_err(|e| e.to_string())?
+        .join("files");
     fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
     Ok(dir)
 }
@@ -56,17 +60,42 @@ fn safe_name(name: &str) -> Result<String, String> {
 // ---------------------------------------------------------------- audio
 
 #[tauri::command]
-fn native_audio_start(app: AppHandle, state: State<AppState>, settings: Option<String>) -> Result<AudioInfo, String> {
+fn native_audio_start(
+    app: AppHandle,
+    state: State<AppState>,
+    settings: Option<String>,
+) -> Result<AudioInfo, String> {
     let mut slot = state.audio.lock();
     if let Some(b) = slot.as_ref() {
-        return Ok(AudioInfo { device: b.device_name.clone(), sample_rate: b.sample_rate, latency_ms: b.latency_ms });
+        return Ok(AudioInfo {
+            device: b.device_name.clone(),
+            sample_rate: b.sample_rate,
+            latency_ms: b.latency_ms,
+        });
     }
     let prefs = read_prefs(&app);
-    let device = prefs.get("audioDeviceId").and_then(|v| v.as_str()).map(String::from);
-    let buffer = prefs.get("bufferSize").and_then(|v| v.as_u64()).unwrap_or(128) as u32;
-    let engine_settings: Option<EngineSettings> = settings.and_then(|s| serde_json::from_str(&s).ok());
-    let backend = audio::start(app.clone(), device, buffer, engine_settings, state.midi.clone())?;
-    let info = AudioInfo { device: backend.device_name.clone(), sample_rate: backend.sample_rate, latency_ms: backend.latency_ms };
+    let device = prefs
+        .get("audioDeviceId")
+        .and_then(|v| v.as_str())
+        .map(String::from);
+    let buffer = prefs
+        .get("bufferSize")
+        .and_then(|v| v.as_u64())
+        .unwrap_or(128) as u32;
+    let engine_settings: Option<EngineSettings> =
+        settings.and_then(|s| serde_json::from_str(&s).ok());
+    let backend = audio::start(
+        app.clone(),
+        device,
+        buffer,
+        engine_settings,
+        state.midi.clone(),
+    )?;
+    let info = AudioInfo {
+        device: backend.device_name.clone(),
+        sample_rate: backend.sample_rate,
+        latency_ms: backend.latency_ms,
+    };
     *slot = Some(backend);
     Ok(info)
 }
@@ -78,7 +107,10 @@ fn native_audio_stop(state: State<AppState>) {
 
 #[tauri::command]
 fn native_audio_devices() -> Vec<DeviceInfo> {
-    audio::list_output_devices().into_iter().map(|(id, name)| DeviceInfo { id, name }).collect()
+    audio::list_output_devices()
+        .into_iter()
+        .map(|(id, name)| DeviceInfo { id, name })
+        .collect()
 }
 
 #[tauri::command]
@@ -98,7 +130,11 @@ fn native_command(state: State<AppState>, json: String) -> Result<(), String> {
 }
 
 #[tauri::command]
-fn native_call(state: State<AppState>, method: String, args: String) -> Result<serde_json::Value, String> {
+fn native_call(
+    state: State<AppState>,
+    method: String,
+    args: String,
+) -> Result<serde_json::Value, String> {
     let args: Vec<serde_json::Value> = serde_json::from_str(&args).map_err(|e| e.to_string())?;
     // clone the Arc so we do not hold the state lock while waiting on the audio thread
     let shared = {
@@ -107,8 +143,13 @@ fn native_call(state: State<AppState>, method: String, args: String) -> Result<s
         b.shared.clone()
     };
     let (tx, rx) = std::sync::mpsc::channel();
-    shared.requests.lock().push(audio::Request::Call { method, args, reply: tx });
-    rx.recv_timeout(std::time::Duration::from_secs(3)).map_err(|_| "engine call timed out".to_string())?
+    shared.requests.lock().push(audio::Request::Call {
+        method,
+        args,
+        reply: tx,
+    });
+    rx.recv_timeout(std::time::Duration::from_secs(3))
+        .map_err(|_| "engine call timed out".to_string())?
 }
 
 // ---------------------------------------------------------------- MIDI
@@ -120,7 +161,10 @@ fn midi_outputs() -> Result<Vec<DeviceInfo>, String> {
         .ports()
         .iter()
         .enumerate()
-        .map(|(i, p)| DeviceInfo { id: i.to_string(), name: out.port_name(p).unwrap_or_else(|_| format!("port {i}")) })
+        .map(|(i, p)| DeviceInfo {
+            id: i.to_string(),
+            name: out.port_name(p).unwrap_or_else(|_| format!("port {i}")),
+        })
         .collect())
 }
 
@@ -131,7 +175,9 @@ fn midi_select(state: State<AppState>, id: String) -> Result<String, String> {
     let idx: usize = id.parse().map_err(|_| "bad port id")?;
     let port = ports.get(idx).ok_or("no such MIDI port")?;
     let name = out.port_name(port).unwrap_or_default();
-    let conn = out.connect(port, "gesture-synth-out").map_err(|e| e.to_string())?;
+    let conn = out
+        .connect(port, "gesture-synth-out")
+        .map_err(|e| e.to_string())?;
     *state.midi.lock() = Some(conn);
     Ok(name)
 }
@@ -155,8 +201,17 @@ fn list_files(app: AppHandle) -> Result<Vec<FileInfo>, String> {
         if !md.is_file() {
             continue;
         }
-        let modified = md.modified().ok().and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok()).map(|d| d.as_millis() as u64).unwrap_or(0);
-        out.push(FileInfo { name: e.file_name().to_string_lossy().into_owned(), size: md.len(), modified });
+        let modified = md
+            .modified()
+            .ok()
+            .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+            .map(|d| d.as_millis() as u64)
+            .unwrap_or(0);
+        out.push(FileInfo {
+            name: e.file_name().to_string_lossy().into_owned(),
+            size: md.len(),
+            modified,
+        });
     }
     Ok(out)
 }
@@ -204,11 +259,17 @@ fn save_bytes(path: String, bytes: Vec<u8>) -> Result<(), String> {
 /// Small persisted preferences the Rust side needs before the webview asks
 /// (audio device + buffer size). Written by the frontend via `set_prefs`.
 fn prefs_path(app: &AppHandle) -> PathBuf {
-    app.path().app_data_dir().map(|p| p.join("prefs.json")).unwrap_or_else(|_| PathBuf::from("prefs.json"))
+    app.path()
+        .app_data_dir()
+        .map(|p| p.join("prefs.json"))
+        .unwrap_or_else(|_| PathBuf::from("prefs.json"))
 }
 
 fn read_prefs(app: &AppHandle) -> serde_json::Map<String, serde_json::Value> {
-    fs::read_to_string(prefs_path(app)).ok().and_then(|s| serde_json::from_str(&s).ok()).unwrap_or_default()
+    fs::read_to_string(prefs_path(app))
+        .ok()
+        .and_then(|s| serde_json::from_str(&s).ok())
+        .unwrap_or_default()
 }
 
 #[tauri::command]
@@ -223,17 +284,47 @@ fn set_prefs(app: AppHandle, json: String) -> Result<(), String> {
 // ---------------------------------------------------------------- ffmpeg sidecar
 
 #[tauri::command]
-async fn ffmpeg_convert(app: AppHandle, input: Vec<u8>, input_ext: String, output_ext: String) -> Result<Vec<u8>, String> {
+async fn ffmpeg_convert(
+    app: AppHandle,
+    input: Vec<u8>,
+    input_ext: String,
+    output_ext: String,
+) -> Result<Vec<u8>, String> {
     let tmp = std::env::temp_dir().join(format!("gsyn-{}", std::process::id()));
     fs::create_dir_all(&tmp).map_err(|e| e.to_string())?;
     let in_path = tmp.join(format!("in.{}", safe_name(&input_ext)?));
     let out_path = tmp.join(format!("out.{}", safe_name(&output_ext)?));
     fs::write(&in_path, &input).map_err(|e| e.to_string())?;
-    let mut args = vec!["-y".to_string(), "-i".into(), in_path.to_string_lossy().into_owned()];
+    let mut args = vec![
+        "-y".to_string(),
+        "-i".into(),
+        in_path.to_string_lossy().into_owned(),
+    ];
     if output_ext == "mp4" {
-        args.extend(["-c:v", "libx264", "-preset", "veryfast", "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart"].iter().map(|s| s.to_string()));
+        args.extend(
+            [
+                "-c:v",
+                "libx264",
+                "-preset",
+                "veryfast",
+                "-pix_fmt",
+                "yuv420p",
+                "-c:a",
+                "aac",
+                "-b:a",
+                "192k",
+                "-movflags",
+                "+faststart",
+            ]
+            .iter()
+            .map(|s| s.to_string()),
+        );
     } else if output_ext == "webm" {
-        args.extend(["-c:v", "libvpx-vp9", "-b:v", "4M", "-c:a", "libopus"].iter().map(|s| s.to_string()));
+        args.extend(
+            ["-c:v", "libvpx-vp9", "-b:v", "4M", "-c:a", "libopus"]
+                .iter()
+                .map(|s| s.to_string()),
+        );
     }
     args.push(out_path.to_string_lossy().into_owned());
     // bundled sidecar first, then a system ffmpeg
@@ -243,7 +334,18 @@ async fn ffmpeg_convert(app: AppHandle, input: Vec<u8>, input_ext: String, outpu
     }
     .map_err(|e| format!("ffmpeg failed to start: {e}"))?;
     if !output.status.success() {
-        return Err(format!("ffmpeg exited with {:?}: {}", output.status.code(), String::from_utf8_lossy(&output.stderr).chars().rev().take(600).collect::<String>().chars().rev().collect::<String>()));
+        return Err(format!(
+            "ffmpeg exited with {:?}: {}",
+            output.status.code(),
+            String::from_utf8_lossy(&output.stderr)
+                .chars()
+                .rev()
+                .take(600)
+                .collect::<String>()
+                .chars()
+                .rev()
+                .collect::<String>()
+        ));
     }
     let bytes = fs::read(&out_path).map_err(|e| e.to_string())?;
     let _ = fs::remove_dir_all(&tmp);
@@ -252,7 +354,11 @@ async fn ffmpeg_convert(app: AppHandle, input: Vec<u8>, input_ext: String, outpu
 
 #[tauri::command]
 fn app_version() -> String {
-    format!("{} (core {})", env!("CARGO_PKG_VERSION"), gsyn_core::version())
+    format!(
+        "{} (core {})",
+        env!("CARGO_PKG_VERSION"),
+        gsyn_core::version()
+    )
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -263,7 +369,10 @@ pub fn run() {
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_deep_link::init())
-        .manage(AppState { audio: Mutex::new(None), midi: Arc::new(Mutex::new(None)) })
+        .manage(AppState {
+            audio: Mutex::new(None),
+            midi: Arc::new(Mutex::new(None)),
+        })
         .setup(|app| {
             #[cfg(any(windows, target_os = "linux"))]
             {

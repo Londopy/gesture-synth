@@ -1,6 +1,8 @@
 // Medal definitions. Pure data + pure predicates over the Stats snapshot so
 // the whole set is unit-testable without the app running.
 
+import { DEMO_IDS } from '../demo/ids';
+
 export type Tier = 'bronze' | 'silver' | 'gold' | 'platinum';
 export type Category = 'play' | 'loop' | 'learn' | 'explore' | 'dedication' | 'hush';
 
@@ -54,6 +56,8 @@ export interface Stats {
   quickChanges: number; // major<->minor within 10 s
   chordsInOneSession: number;
   bestChordsInOneSession: number;
+  demosWatched: string[]; // distinct demo ids watched to the end
+  demoPlays: number;
 }
 
 export function emptyStats(): Stats {
@@ -98,6 +102,8 @@ export function emptyStats(): Stats {
     quickChanges: 0,
     chordsInOneSession: 0,
     bestChordsInOneSession: 0,
+    demosWatched: [],
+    demoPlays: 0,
   };
 }
 
@@ -163,6 +169,8 @@ export const MEDALS: Medal[] = [
   { id: 'broadcast', name: 'Broadcast', hint: 'Share with the world.', description: 'Published to the community.', category: 'explore', tier: 'silver', icon: '📡', ...counter((s) => s.publishes, 1) },
   { id: 'keeper', name: 'Keeper', hint: 'Save your work.', description: 'Saved a session.', category: 'explore', tier: 'bronze', icon: '🗂️', ...counter((s) => s.sessionsSaved, 1) },
   { id: 'guided', name: 'Guided', hint: 'Take the tour.', description: 'Finished the guided tour.', category: 'explore', tier: 'bronze', icon: '🧭', check: (s) => s.tourDone },
+  { id: 'spectator', name: 'Spectator', hint: 'Watch a demo all the way through.', description: 'Watched a full demo performance.', category: 'explore', tier: 'bronze', icon: '🍿', ...distinct((s) => s.demosWatched, 1) },
+  { id: 'front_row', name: 'Front Row', hint: 'Watch every built-in demo.', description: 'Watched all four built-in demos.', category: 'explore', tier: 'silver', icon: '🎟️', ...distinct((s) => s.demosWatched.filter((d) => (DEMO_IDS as readonly string[]).includes(d)), DEMO_IDS.length) },
   // ---- dedication ------------------------------------------------------------
   { id: 'warm_up', name: 'Warm Up', hint: 'Keep playing.', description: 'One hour of playing.', category: 'dedication', tier: 'silver', icon: '🔥', ...counter((s) => s.playSeconds, 3600) },
   { id: 'devoted', name: 'Devoted', hint: 'Keep playing, a lot.', description: 'Ten hours of playing.', category: 'dedication', tier: 'gold', icon: '🏆', ...counter((s) => s.playSeconds, 36000) },

@@ -56,7 +56,8 @@ export type TrackEvent =
   | { kind: 'publish' }
   | { kind: 'session_saved' }
   | { kind: 'tour_done' }
-  | { kind: 'secret'; id: string };
+  | { kind: 'secret'; id: string }
+  | { kind: 'demo_watched'; id: string };
 
 class Achievements {
   stats = $state<Stats>(load().stats);
@@ -68,6 +69,8 @@ class Achievements {
   private lastQualityAt = 0;
   private saveTimer = 0;
   private started = false;
+  /** while a demo plays, nothing it produces counts as the user's own playing */
+  private demoMuted = false;
 
   get unlockedIds(): Set<string> {
     return new Set(this.unlocked.map((u) => u.id));
@@ -87,6 +90,20 @@ class Achievements {
 
   unlockedAt(id: string): number | null {
     return this.unlocked.find((u) => u.id === id)?.at ?? null;
+  }
+
+  /**
+   * Mute every stat except demo_watched while the demo performer plays. Every
+   * source funnels through track(), so this one switch covers the runtime
+   * listener, the settings effects and the UI call sites alike.
+   */
+  setDemo(on: boolean) {
+    this.demoMuted = on;
+    if (!on) {
+      // the demo's chords must not pair with the user's next one as a "quick change"
+      this.lastQuality = -1;
+      this.lastQualityAt = 0;
+    }
   }
 
   /** Called once from App: wires runtime listeners and timers. */
@@ -151,7 +168,7 @@ class Achievements {
     });
     // time: play seconds, theremin seconds, days, night sessions
     setInterval(() => {
-      if (rt.phase !== 'ready' || document.visibilityState !== 'visible') return;
+      if (rt.phase !== 'ready' || document.visibilityState !== 'visible' || this.demoMuted) return;
       const s = this.stats;
       s.playSeconds++;
       if (rt.live.theremin && rt.live.thereminVol > 0.05) s.thereminSeconds++;
@@ -169,6 +186,7 @@ class Achievements {
   private nightCounted = false;
 
   track(e: TrackEvent) {
+    if (this.demoMuted && e.kind !== 'demo_watched') return;
     const s = this.stats;
     const addDistinct = <T>(arr: T[], v: T) => (arr.includes(v) ? arr : [...arr, v]);
     switch (e.kind) {
@@ -249,6 +267,10 @@ class Achievements {
       case 'secret':
         s.eggs = addDistinct(s.eggs, e.id);
         s.secretsFound = s.eggs.length;
+        break;
+      case 'demo_watched':
+        s.demosWatched = addDistinct(s.demosWatched, e.id);
+        s.demoPlays++;
         break;
     }
     this.evaluate();

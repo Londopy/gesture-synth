@@ -2,6 +2,8 @@
 // (spec 9 "Learn": score = timing accuracy + shape accuracy).
 
 import type { Quality, Shape } from '../music';
+// demo/songs imports only types from this module, so the runtime edge is one-way
+import { DEMO_SONGS } from '../demo/songs';
 
 export interface SongChord {
   bar: number;
@@ -97,7 +99,7 @@ export const BUILTIN_SONGS: Song[] = [
 ];
 
 export function songById(id: string): Song | undefined {
-  return BUILTIN_SONGS.find((s) => s.id === id);
+  return BUILTIN_SONGS.find((s) => s.id === id) ?? (DEMO_SONGS as Song[]).find((s) => s.id === id);
 }
 
 // ------------------------------------------------------------------ scoring
