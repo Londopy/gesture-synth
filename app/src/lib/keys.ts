@@ -1,5 +1,6 @@
 // Transport keys (spec 7) with a user-editable map (Settings > shortcuts).
 
+import { demo } from './demo/demo.svelte';
 import { rt } from './state/engine.svelte';
 import { ui } from './state/ui.svelte';
 import { settings } from './state/settings.svelte';
@@ -27,7 +28,8 @@ export type Action =
   | 'export'
   | 'grid'
   | 'viewMode'
-  | 'recordVideo';
+  | 'recordVideo'
+  | 'demo';
 
 export const ACTION_LABELS: Record<Action, string> = {
   playPause: 'Play / stop',
@@ -53,6 +55,7 @@ export const ACTION_LABELS: Record<Action, string> = {
   grid: 'Toggle beat grid',
   viewMode: 'Cycle view: performance / practice / clear camera',
   recordVideo: 'Record video (scene or camera, audio, mic)',
+  demo: 'Watch demo',
 };
 
 /** Normalise a KeyboardEvent into the combo string format used in settings. */
@@ -96,6 +99,10 @@ export function handleKeydown(e: KeyboardEvent): boolean {
     ui.help = false;
     return true;
   }
+  if (ui.demoPicker && e.key === 'Escape') {
+    ui.demoPicker = false;
+    return true;
+  }
   const map = settings.s.shortcuts;
   const combo = comboOf(e);
   const shiftCombo = e.shiftKey ? (combo.startsWith('Shift+') ? combo : `Shift+${combo}`) : combo;
@@ -125,8 +132,12 @@ export function handleKeydown(e: KeyboardEvent): boolean {
   return true;
 }
 
+/** Actions that may run while a demo plays; anything else stops it first, like a keyboard demo stopping when a key is pressed. */
+const DEMO_SAFE: ReadonlySet<Action> = new Set<Action>(['help', 'fullscreen', 'grid', 'viewMode', 'demo']);
+
 export async function run(action: Action, e?: KeyboardEvent) {
   const shift = !!e?.shiftKey;
+  if (demo.active && !DEMO_SAFE.has(action)) demo.stop('key');
   switch (action) {
     case 'playPause':
       rt.togglePlay();
@@ -197,6 +208,10 @@ export async function run(action: Action, e?: KeyboardEvent) {
     }
     case 'recordVideo':
       ui.recordSheet = !ui.recordSheet;
+      break;
+    case 'demo':
+      if (demo.active) demo.stop('key');
+      else ui.openDemoPicker();
       break;
   }
 }

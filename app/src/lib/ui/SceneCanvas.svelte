@@ -11,6 +11,7 @@
   import { hueOf } from '../music';
   import { EggDetector } from '../eggs/detect';
   import { fireEgg } from '../eggs/effects';
+  import { demo } from '../demo/demo.svelte';
 
   let { learn = null, onready }: { learn?: (() => LearnTarget | null) | null; onready?: (s: GestureScene) => void } = $props();
 
@@ -74,7 +75,9 @@
       frame.bassHits = rt.bassHits;
       rt.bursts = [];
       rt.bassHits = 0;
-      frame.mirror = !settings.s.parser.calibration.mirror_frame;
+      // A demo's synthetic hands are authored in mirrored image space and have
+      // no camera behind them, so the view is forced while one plays.
+      frame.mirror = demo.active ? true : !settings.s.parser.calibration.mirror_frame;
       rt.sampleGhosts();
       for (let i = 0; i < 4; i++) {
         const g = rt.ghosts[i];
@@ -87,10 +90,11 @@
         gh.state = rt.tracks[i];
       }
       frame.learn = learn ? learn() : null;
-      if (settings.s.eggsEnabled && rt.phase === 'ready') {
+      if (settings.s.eggsEnabled && rt.phase === 'ready' && !demo.active) {
         for (const e of eggs.update(now, rt.left, rt.right, rt.leftLandmarks, rt.rightLandmarks)) fireEgg(e, scene, frame.mirror);
       }
-      scene.setView(ui.performance && settings.s.viewMode !== 'clear' ? 'performance' : settings.s.viewMode, settings.s.clearShowHands, frame.mirror);
+      const view = demo.active ? 'performance' : ui.performance && settings.s.viewMode !== 'clear' ? 'performance' : settings.s.viewMode;
+      scene.setView(view, settings.s.clearShowHands, frame.mirror);
       scene.render(frame);
       if (++hudTick % 30 === 0) {
         fps = Math.round(scene.fps);

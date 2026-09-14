@@ -7,21 +7,40 @@
   import { ui } from '../state/ui.svelte';
   import { flags, describePlatform } from '../platform';
   import Calibration from './Calibration.svelte';
+  import { demo } from '../demo/demo.svelte';
 
   let step = $state<'start' | 'calibrate' | 'done'>('start');
   let openDesktop = $state(false);
 
+  // Audio is up but the camera was never asked for (a demo ran first).
+  const audioOnly = $derived(rt.phase === 'ready' && !rt.cameraFailed && rt.trackingStatus === 'idle');
+
   async function start() {
-    await rt.start();
+    if (audioOnly) await rt.startCamera();
+    else await rt.start();
     if (rt.phase === 'ready') {
       if (rt.cameraFailed) {
-        ui.toast(rt.trackingStatus === 'denied' ? 'Camera blocked. You can still play with the keyboard and loops; allow the camera and use Settings > Camera to retry.' : 'Camera unavailable: ' + rt.error, 'warn', 8000);
+        ui.toast(rt.trackingStatus === 'denied' ? 'Camera blocked. You can still play with the keyboard and loops, or watch a demo; allow the camera and use Settings > Camera to retry.' : 'Camera unavailable: ' + rt.error, 'warn', 8000);
         settings.s.firstRunDone = true;
         step = 'done';
+        ui.demoPicker = true;
         return;
       }
       step = settings.s.firstRunDone ? 'done' : 'calibrate';
     }
+  }
+
+  // Starts the engine without touching the camera, then plays a demo. The
+  // landing panel disappears while the demo runs and comes back afterwards
+  // offering the camera, so a visitor who cannot or will not allow the camera
+  // still sees what the instrument does.
+  async function watchDemo() {
+    if (rt.phase !== 'ready') await rt.start({ camera: false });
+    if (rt.phase !== 'ready') return;
+    const pending = ui.pendingDemoId;
+    ui.pendingDemoId = null;
+    if (pending === '') ui.openDemoPicker();
+    else void demo.start(pending ?? undefined, { mode: settings.s.demoMode });
   }
 
   function finishCalibration() {
@@ -44,9 +63,10 @@
       {#if step === 'start'}
         <div class="logo display">GESTURE SYNTH</div>
         <p class="tag">Play chords with your hands. Loop them. Watch the harmony.</p>
-        {#if rt.phase === 'idle' || rt.phase === 'error'}
-          <button class="primary big" onclick={start}>Start</button>
+        {#if rt.phase === 'idle' || rt.phase === 'error' || audioOnly}
+          <button class="primary big" onclick={start}>{audioOnly ? 'Start with camera' : 'Start'}</button>
           <p class="hint">Uses your camera and speakers. Nothing leaves this device.</p>
+          <button class="ghost small" onclick={watchDemo}>{audioOnly ? 'Watch another demo' : 'Watch a demo (no camera needed)'}</button>
           {#if rt.phase === 'error'}
             <p class="err">{rt.trackingStatus === 'denied' ? 'Camera permission was denied. Allow the camera in your browser settings, then retry.' : rt.error}</p>
             <button onclick={retryCamera}>Retry</button>

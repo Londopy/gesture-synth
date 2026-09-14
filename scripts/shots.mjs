@@ -166,6 +166,12 @@ await ticks(3);
 await shot('demo');
 await page.evaluate(async () => (await window.__gsyn.demo()).stop('button'));
 await new Promise((r) => setTimeout(r, 400));
+// the picker (D)
+await key('d');
+await page.waitForSelector('[aria-label="Watch a demo"]');
+await ticks(3);
+await shot('demo-picker');
+await key('Escape');
 
 // 6) medals: play the seven degrees and the four shapes, catch the unlock toast, then the page
 await key('Escape');

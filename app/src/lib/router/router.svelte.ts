@@ -8,7 +8,7 @@ export type Page = 'play' | 'learn' | 'builder' | 'instruments' | 'visuals' | 'c
 export interface Route {
   page: Page;
   /** content to open: song/loop/tutorial/preset id */
-  kind?: 'song' | 'loop' | 'learn' | 'preset';
+  kind?: 'song' | 'loop' | 'learn' | 'preset' | 'demo';
   id?: string;
 }
 
@@ -43,6 +43,9 @@ export function parsePath(pathname: string, search = ''): Route {
       return { page: 'learn', kind: seg[1] ? 'learn' : undefined, id: seg[1] };
     case 'preset':
       return { page: 'instruments', kind: 'preset', id: seg[1] };
+    case 'demo':
+      // /demo opens the picker, /demo/<id> starts that demo on the Play page
+      return { page: 'play', kind: 'demo', id: seg[1] };
     case 'builder':
       return { page: 'builder' };
     case 'instruments':
@@ -65,6 +68,7 @@ export function parsePath(pathname: string, search = ''): Route {
 }
 
 export function pathFor(r: Route): string {
+  if (r.kind === 'demo' && !r.id) return '/demo';
   if (r.kind && r.id) {
     const base = r.kind === 'learn' ? '/learn' : `/${r.kind}`;
     return `${base}/${encodeURIComponent(r.id)}`;

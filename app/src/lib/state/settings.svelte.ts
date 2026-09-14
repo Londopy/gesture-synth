@@ -32,6 +32,7 @@ export const DEFAULT_SHORTCUTS: Shortcuts = {
   grid: 'g',
   viewMode: 'c',
   recordVideo: 'Mod+Shift+r',
+  demo: 'd',
 };
 
 export interface Settings {
@@ -83,6 +84,10 @@ export interface Settings {
   /** easter eggs discovered (ids) */
   eggsFound: string[];
   eggsEnabled: boolean;
+  /** what happens when a demo song ends: play the next one, repeat it, or stop */
+  demoMode: 'cycle' | 'loop' | 'once';
+  /** draw the next chord's hand outline while a demo plays */
+  demoShowNext: boolean;
 }
 
 const KEY = 'gsyn.settings.v1';
@@ -155,6 +160,8 @@ export function defaultSettings(): Settings {
     flatNames: false,
     eggsFound: [],
     eggsEnabled: true,
+    demoMode: 'cycle',
+    demoShowNext: true,
   };
 }
 

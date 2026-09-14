@@ -15,6 +15,9 @@
   import Tour from './lib/ui/Tour.svelte';
   import ExportSheet from './lib/ui/ExportSheet.svelte';
   import RecordSheet from './lib/ui/RecordSheet.svelte';
+  import DemoSheet from './lib/ui/DemoSheet.svelte';
+  import DemoBadge from './lib/ui/DemoBadge.svelte';
+  import { demo } from './lib/demo/demo.svelte';
   import Toasts from './lib/ui/Toasts.svelte';
   import ConfirmDialog from './lib/ui/ConfirmDialog.svelte';
   import Learn from './routes/Learn.svelte';
@@ -94,9 +97,29 @@
     };
   });
 
+  // /demo opens the picker, /demo/<id> starts that song. Before the runtime is
+  // ready the Landing screen picks the link up (its "Watch a demo" button).
+  $effect(() => {
+    router.openSeq;
+    const r = router.route;
+    if (r.kind !== 'demo') return;
+    if (rt.phase !== 'ready') {
+      ui.pendingDemoId = r.id ?? '';
+      return;
+    }
+    if (r.id) void demo.start(r.id, { mode: settings.s.demoMode });
+    else ui.openDemoPicker();
+  });
+
   function keydown(e: KeyboardEvent) {
     if (ui.tour && e.key === 'Escape') {
       ui.tour = false;
+      return;
+    }
+    // Escape is otherwise "panic"; while a demo plays it means "stop the demo".
+    if (demo.active && e.key === 'Escape') {
+      ui.demoPicker = false;
+      demo.stop('esc');
       return;
     }
     if (rt.phase !== 'ready') return;
@@ -108,7 +131,9 @@
     handleKeydown(e);
   }
 
-  const learnProvider = () => (page === 'learn' ? learnState.provider?.() ?? null : null);
+  // The scene asks for a target outline each frame: the demo's next chord while
+  // a demo plays, otherwise Learn's current target.
+  const learnProvider = () => (demo.active ? (settings.s.demoShowNext ? demo.target() : null) : page === 'learn' ? learnState.provider?.() ?? null : null);
 </script>
 
 <svelte:window onkeydown={keydown} />
@@ -116,8 +141,9 @@
 <div class="app" class:perf={ui.performance}>
   <SceneCanvas bind:this={sceneCanvas} learn={learnProvider} />
   <Hud />
+  {#if demo.active}<DemoBadge />{/if}
 
-  {#if rt.phase !== 'ready' || !settings.s.firstRunDone}
+  {#if (rt.phase !== 'ready' || !settings.s.firstRunDone) && !demo.active}
     <Landing />
   {/if}
 
@@ -151,6 +177,7 @@
   {#if ui.tour && rt.phase === 'ready'}<Tour />{/if}
   {#if ui.exportSheet}<ExportSheet canvas={() => sceneCanvas?.getCanvas() ?? null} />{/if}
   {#if ui.recordSheet && rt.phase === 'ready'}<RecordSheet canvas={() => sceneCanvas?.getCanvas() ?? null} />{/if}
+  {#if ui.demoPicker && rt.phase === 'ready'}<DemoSheet />{/if}
   {#if rt.phase === 'ready'}<AchievementPopup />{/if}
   <Toasts />
   <ConfirmDialog />

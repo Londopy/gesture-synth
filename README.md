@@ -135,7 +135,7 @@ Sixty-fps scene that reacts to harmony and dynamics: key-tinted background, circ
 <td valign="top">
 
 ### 🎓 Learn
-Song tutorials show the next hand shapes as an outline with a countdown; your hand turns green on a match. Score is timing + shape. Slow down, loop a section.
+Song tutorials show the next hand shapes as an outline with a countdown; your hand turns green on a match. Score is timing + shape. Slow down, loop a section. No camera? Press **D** for a demo: the app plays one of four songs by itself and shows the hands that play it.
 
 </td>
 <td valign="top">
@@ -147,7 +147,7 @@ Clear camera view for framing yourself, then record the scene or the raw camera 
 <td valign="top">
 
 ### 🏅 Collect
-Forty-eight medals from bronze to platinum for playing, looping, learning and exploring, plus ten secret gestures. Unlocks pop up like osu! medals.
+Fifty medals from bronze to platinum for playing, looping, learning, exploring and watching, plus ten secret gestures. Unlocks pop up like osu! medals.
 
 </td>
 <td valign="top">
@@ -205,6 +205,11 @@ npm run tauri:dev                        # or: npm run tauri:build
 | fist | mute | pinch | arpeggiator (height = rate) |
 | tilt inward / outward | major / minor | | |
 
+Press **D** (or Help › Watch demo, or "Watch a demo" on the start screen) and the app
+plays a song by itself: a synthetic pair of hands goes through the real gesture
+parser, so what you see is exactly what a player would do. Esc, any transport
+key, or your own hands on camera stop it. Deep link: `/demo/<song-id>`.
+
 Extras: flick the left hand toward the camera for a bass note, touch both fists
 and rotate to change key around the circle of fifths, hold still for two
 seconds to latch the chord. `Tab` switches to **Theremin** mode (right height =
@@ -227,6 +232,10 @@ under a dark tint) and **clear camera** (the plain picture, no effects).
 | --- | --- |
 | ![Help](docs/shots/help-gestures.png) | ![Recorder](docs/shots/recorder.png) |
 
+| Demo mode | Demo picker |
+| --- | --- |
+| ![Demo mode](docs/shots/demo.png) | ![Demo picker](docs/shots/demo-picker.png) |
+
 </details>
 
 ## Secrets
@@ -246,7 +255,7 @@ it. The screenshot above gives away the first one.
   <img src="docs/shots/medals.png" alt="Medals page: a grid of tiered medals with progress bars, a detail panel for Scale Walker" width="100%">
 </p>
 
-Forty-eight medals across Playing, Looping, Learning, Exploring, Dedication
+Fifty medals across Playing, Looping, Learning, Exploring, Dedication
 and Hush-Hush, in bronze, silver, gold and platinum. Counters show progress;
 the hush-hush ones show nothing until you have them. Unlocks pop up
 osu!-style with a chime. Everything is tracked on your device only.

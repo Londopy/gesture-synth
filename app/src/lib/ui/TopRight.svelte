@@ -4,6 +4,7 @@
   import { settings } from '../state/settings.svelte';
   import { ui } from '../state/ui.svelte';
   import { visibleThemeNames } from '../themes';
+  import { demo } from '../demo/demo.svelte';
 
   const INSTRUMENTS = ['Pad', 'Keys', 'Organ', 'Pluck', 'Bass', 'Lead', 'Choir'];
   const isTheremin = $derived(settings.s.parser.mode === 'theremin');
@@ -40,6 +41,9 @@
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1.5" y="4" width="9" height="8" rx="1.5" /><path d="M10.5 7l4-2v6l-4-2z" /></svg>
   </button>
   <button class="icon" title="Help (H)" aria-label="Help" onclick={() => ui.toggleHelp()}>?</button>
+  <button class="icon" class:active={demo.active} title="Watch demo (D)" aria-label="Watch demo" onclick={() => (demo.active ? demo.stop('button') : ui.openDemoPicker())}>
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="1.5" y="2.5" width="13" height="9" rx="2" /><path d="M6.5 5.5v3l2.8-1.5z" fill="currentColor" stroke="none" /><path d="M5 14h6" /></svg>
+  </button>
   <button class="icon" title="Performance view (F)" aria-label="Performance view" onclick={() => ui.toggleFullscreen()}>
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4" /></svg>
   </button>

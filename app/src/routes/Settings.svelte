@@ -169,6 +169,23 @@
       </section>
 
       <section class="glass card col">
+        <h3>Demo &amp; onboarding</h3>
+        <div class="row wrap">
+          <button onclick={() => ui.openDemoPicker()} disabled={rt.phase !== 'ready'}>Watch demo</button>
+          <button onclick={() => ui.startTour()} disabled={rt.phase !== 'ready'}>Re-run tour</button>
+        </div>
+        <label class="row">When a demo ends
+          <select bind:value={settings.s.demoMode}>
+            <option value="cycle">Play the next demo</option>
+            <option value="loop">Repeat the same demo</option>
+            <option value="once">Stop</option>
+          </select>
+        </label>
+        <label class="row"><input type="checkbox" bind:checked={settings.s.demoShowNext} /> Show the next chord as an outline during demos</label>
+        <p class="hint">Press <kbd>D</kbd> anywhere to open the demos. Esc, any transport key, or your own hands on camera stop one.</p>
+      </section>
+
+      <section class="glass card col">
         <h3>Accessibility &amp; privacy</h3>
         <label class="row"><input type="checkbox" bind:checked={settings.s.reducedMotion} /> Reduced motion</label>
         <label class="row"><input type="checkbox" bind:checked={settings.s.highContrast} /> High contrast</label>

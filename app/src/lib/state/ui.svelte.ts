@@ -23,6 +23,9 @@ class UiStore {
   grid = $state(false);
   exportSheet = $state(false);
   recordSheet = $state(false);
+  demoPicker = $state(false);
+  /** a /demo[/<id>] link opened before the runtime was ready; Landing offers it ('' = open the picker) */
+  pendingDemoId = $state<string | null>(null);
   shareSheet = $state(false);
   railOpen = $state(false);
   toasts = $state<Toast[]>([]);
@@ -54,6 +57,14 @@ class UiStore {
 
   toggleHelp() {
     this.help = !this.help;
+  }
+
+  /** The demo picker is one sheet among the overlays; it replaces whatever was open. */
+  openDemoPicker() {
+    this.demoPicker = true;
+    this.help = false;
+    this.tour = false;
+    this.recordSheet = false;
   }
 
   toggleGrid() {

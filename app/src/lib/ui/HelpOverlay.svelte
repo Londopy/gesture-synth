@@ -27,6 +27,7 @@
       </div>
       <div class="row">
         <MadeBy />
+        <button onclick={() => ui.openDemoPicker()}>Watch demo</button>
         <button onclick={() => ui.startTour()}>Re-run tour</button>
         <button class="ghost" onclick={() => (ui.help = false)} aria-label="Close">×</button>
       </div>
@@ -88,6 +89,7 @@
       <div class="content">
         <h3>Camera</h3>
         <ul>
+          <li>No camera? Press <kbd>D</kbd> (or Help › Watch demo): the app plays a song by itself and shows the hands that play it.</li>
           <li>No camera prompt: check the site permission (lock icon in the address bar) or the app's camera permission in the OS.</li>
           <li>Hands flicker or swap: face the camera, keep hands side by side, add light from the front. Current confidence: {Math.round(rt.live.confidence * 100)}%.</li>
           <li>Left and right reversed: Settings → Calibration → "Swap left/right" (or "Camera image is mirrored").</li>

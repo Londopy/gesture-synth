@@ -12,6 +12,8 @@
   import { learnState } from './learn-state.svelte';
   import { store, pickFile } from '../lib/storage/store';
   import { achievements } from '../lib/achievements/store.svelte';
+  import { demo } from '../lib/demo/demo.svelte';
+  import { DEMO_SONGS } from '../lib/demo/songs';
 
   let song = $state<Song | null>(null);
   let targets = $state<TutorialTarget[]>([]);
@@ -190,6 +192,13 @@
     const s = JSON.parse(await store.read(name, 'song')) as Song;
     await select(s);
   }
+  // Any song can be demoed, not only the four built-in demos: the performer
+  // falls back to a neutral volume and filter when a chord has no perf hints.
+  function watch() {
+    if (!song) return;
+    void demo.start(song, { mode: 'once', returnTo: 'learn' });
+    router.go('play');
+  }
   function useAsBacking() {
     if (!song) return;
     void rt.loadSongIntoTrack(JSON.stringify(song), 3);
@@ -209,7 +218,7 @@
     <div class="layout">
       <aside class="songs glass card">
         <span class="label">Built in</span>
-        {#each BUILTIN_SONGS as s}
+        {#each [...BUILTIN_SONGS, ...DEMO_SONGS] as s}
           <button class="song" class:active={song?.id === s.id} onclick={() => select(s)}>
             <span class="sn">{s.name}</span>
             <span class="sm">{s.key} {s.mode} · {s.bpm} bpm · {s.bars} bars</span>
@@ -249,6 +258,7 @@
             {:else}
               <button class="primary" onclick={start} disabled={rt.phase !== 'ready'}>Start</button>
             {/if}
+            <button onclick={watch} disabled={rt.phase !== 'ready' || running} title="The app plays this song and shows the hands">Watch demo</button>
             <label class="row small">Speed
               <select value={speed} onchange={(e) => setSpeed(Number((e.target as HTMLSelectElement).value))}>
                 {#each [0.5, 0.6, 0.7, 0.8, 0.9, 1] as v}<option value={v}>{Math.round(v * 100)}%</option>{/each}

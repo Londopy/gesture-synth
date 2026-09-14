@@ -6,12 +6,15 @@ All notable changes to Gesture Synth are documented here. The format follows [Ke
 
 ### Added
 
+- Demo mode (`D`, Help › Watch demo, "Watch a demo (no camera needed)" on the start screen, `/demo/<id>`): four built-in songs (Lantern Waltz, Brass Tacks, Slow Orbit, Circuit Breaker) are performed by a synthetic pair of hands through the real gesture parser, so the hands, HUD, particles and audio are exactly what a player would produce: sevenths, inversions, octave thumb up and down, filter tilt, swells, flick bass hits, the pinch arpeggiator and a latched chord that rings with the hands off screen. Works without a camera; stops on Esc, any transport key, or when real hands appear; restores tempo, key, bars, quantize, instrument and loop mutes afterwards. Stats and medals are not affected while a demo runs.
+- Two medals for watching: Spectator (a full demo) and Front Row (all four).
 - README: "Play it in your browser" and "Download" buttons at the top, pointing at the hosted site on Render and the latest release.
 - Release workflow: builds the macOS Apple Silicon `.dmg` alongside Windows and Linux (arm64 only, no Homebrew, 45 min timeout, `continue-on-error` so a hung Mac runner cannot block the release). The opt-in macOS workflow remains for Intel builds and re-runs.
 - Community service: applies `sql/schema.sql` on startup (idempotent), waits for the database pool before serving, and accepts hosted Postgres connection strings as pasted from Neon, Supabase or Render (adds the default port, uses verified TLS so the server name is sent, passes Neon's endpoint id). No manual schema step is needed any more.
 
 ### Changed
 
+- Synthetic hands gained tucked (octave 0) and folded (octave -1) thumb poses; a relaxed synthetic thumb sits inside the parser's hysteresis band, so a demo could never return to octave 0 without them.
 - Releases are no longer flagged as pre-releases for `v0.x` tags.
 - Help › Secrets no longer spells out each hidden gesture. Unfound secrets show a riddle only; the plain how-to appears after a secret has been found.
 
